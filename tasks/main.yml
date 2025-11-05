@@ -21,6 +21,9 @@
 # @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
 ##
 
+- name: Determine versions
+  ansible.builtin.import_tasks: ./set_versions.yml
+
 - name: Install PHP
   ansible.builtin.import_tasks: ./install_php.yml
 
