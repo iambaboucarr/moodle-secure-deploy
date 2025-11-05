@@ -2,31 +2,29 @@
   become: true
   vars:
     ansible_user: "{{ lookup('env','USER') }}"
+    moodle_version: "5.1"
     php_version: "8.4"
-    moodle_version: "5.1" # role will auto-derive MOODLE_51_STABLE
-    # php_version: "8.4"          # optional; if omitted, role derives from moodle_version
   roles:
     - role: geerlingguy.php
       vars:
         php_ppa: "ppa:ondrej/php"
         php_enable_webserver: false
-        php_version: "{{ php_version }}"
         php_use_managed_ini: true
         php_max_input_vars: 5000
         php_file_uploads: "On"
         php_opcache_enable: 1
         php_packages_extra:
-          - "php{{ php_version | default('8.4') }}-fpm"
-          - "php{{ php_version | default('8.4') }}-cli"
-          - "php{{ php_version | default('8.4') }}-curl"
-          - "php{{ php_version | default('8.4') }}-gd"
-          - "php{{ php_version | default('8.4') }}-intl"
-          - "php{{ php_version | default('8.4') }}-mbstring"
-          - "php{{ php_version | default('8.4') }}-xml"
-          - "php{{ php_version | default('8.4') }}-zip"
-          - "php{{ php_version | default('8.4') }}-tidy"
-          - "php{{ php_version | default('8.4') }}-exif"
-          - "php{{ php_version | default('8.4') }}-pgsql" # or -mysql
+          - "php{{ php_version }}-fpm"
+          - "php{{ php_version }}-cli"
+          - "php{{ php_version }}-curl"
+          - "php{{ php_version }}-gd"
+          - "php{{ php_version }}-intl"
+          - "php{{ php_version }}-mbstring"
+          - "php{{ php_version }}-xml"
+          - "php{{ php_version }}-zip"
+          - "php{{ php_version }}-tidy"
+          - "php{{ php_version }}-exif"
+          - "php{{ php_version }}-pgsql" # or -mysql
     - role: geoffreyvanwyk.moodle
       vars:
         php_version: "{{ php_version }}"
