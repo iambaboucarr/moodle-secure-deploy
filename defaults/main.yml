@@ -29,7 +29,7 @@
 moodle_env: production # or development
 
 # Human-readable format of the Moodle version to be installed.
-moodle_version: "4.3"
+moodle_version: "5.1"
 
 # ------ Deployment of Source Code {{{1
 
@@ -47,6 +47,10 @@ moodle_deploy_destination: /var/www/html/moodle
 # Whether to pull new Git commits from the remote repository if the role is
 # run after the initial installation.
 moodle_deploy_update: true
+
+# Branch, tag, or commit of the Moodle repository to deploy. If left empty, a
+# stable branch will be derived from moodle_version by the role at runtime.
+moodle_deploy_version: ""
 
 # ------ Web Hosting {{{1
 
