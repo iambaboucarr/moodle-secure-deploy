@@ -1,0 +1,41 @@
+---
+# This file is part of Ansible role geoffreyvanwyk.moodle.
+#
+# Ansible role geoffreyvanwyk.moodle is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible role geoffreyvanwyk.moodle is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Ansible role geoffreyvanwyk.moodle. If not, see
+# <https://www.gnu.org/licenses/>.
+
+##
+# Override variables for this Molecule scenario.
+#
+# @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
+##
+
+moodle_plugins:
+  - name: availability_relativedate
+    archive: "{{
+      'https://moodle.org/plugins/'
+      'download.php/30644/availability_relativedate_moodle43_2023120800.zip' }}"
+  - name: tool_datewatch
+    archive: "{{
+      'https://moodle.org/plugins/'
+      'download.php/32321/tool_datewatch_moodle44_2024061100.zip' }}"
+
+moodle_plugins_git:
+  - name: mod_customcert
+    repository: https://github.com/mdjnelson/moodle-mod_customcert
+    version: "{{ moodle_deploy_version }}"
+  - name: theme_learningsandboxonline
+    repository: >-
+      https://github.com/geoffreyvanwyk/moodle-theme_learningsandboxonline
+    version: "{{ moodle_deploy_version }}"

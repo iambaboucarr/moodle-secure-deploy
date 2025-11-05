@@ -1,0 +1,57 @@
+---
+# This file is part of Ansible role geoffreyvanwyk.moodle.
+#
+# Ansible role geoffreyvanwyk.moodle is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible role geoffreyvanwyk.moodle is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Ansible role geoffreyvanwyk.moodle. If not, see
+# <https://www.gnu.org/licenses/>.
+
+##
+# Contains specific tests against the state of the container after the role has
+# finished executing.
+#
+# @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
+##
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+
+  vars_files:
+    - ../../defaults/main.yml
+    - ../../vars/main.yml
+    - vars/main.yml
+
+  tasks:
+    - name: Obtain list of additional plugins
+      args:
+        executable: /bin/bash
+      ansible.builtin.shell:
+        chdir: "{{ moodle_deploy_destination }}"
+        cmd: >-
+          set -o pipefail
+          &&
+          php admin/cli/uninstall_plugins.php --show-contrib
+          |
+          cut -f1
+      register: moodle_additional_plugins_installed
+      changed_when: false
+
+    - name: Assert that plugins are installed from Git repositories
+      loop: "{{ moodle_plugins_git }}"
+      ansible.builtin.assert:
+        that: item.name in moodle_additional_plugins_installed.stdout_lines
+
+    - name: Assert that plugins are installed from Moodle plugins directory
+      loop: "{{ moodle_plugins }}"
+      ansible.builtin.assert:
+        that: item.name in moodle_additional_plugins_installed.stdout_lines

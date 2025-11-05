@@ -1,0 +1,118 @@
+---
+# This file is part of Ansible role geoffreyvanwyk.moodle.
+#
+# Ansible role geoffreyvanwyk.moodle is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible role geoffreyvanwyk.moodle is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Ansible role geoffreyvanwyk.moodle. If not, see
+# <https://www.gnu.org/licenses/>.
+
+##
+# Deploy the Moodle and plugins source code from a remote source code
+# repository host like GitHub.
+#
+# @copyright  2024 Geoffrey Bernardo van Wyk {@link https://geoffreyvanwyk.dev}
+##
+
+- name: Ensure necessary packages are available
+  become: true
+  ansible.builtin.apt:
+    package:
+      - git # Git source code management system
+      - acl # Access control lists
+    state: present
+
+- name: Help Git overcome unstable Internet connection
+  block:
+    - name: Use HTTP version 1 for Git
+      # Attempt to solve these errors:
+      #   error: RPC failed; curl 92 HTTP/2 stream 0 was not closed cleanly: CANCEL (err 8)
+      #   error: 1114 bytes of body are still expected
+      #   fetch-pack: unexpected disconnect while reading sideband packet
+      #   fatal: early EOF
+      #   fatal: fetch-pack: invalid index-pack output"
+      community.general.git_config:
+        scope: global
+        name: http.version
+        value: HTTP/1.1
+
+    - name: Disable Git compression
+      # Attempt to solve these errors:
+      #   error: RPC failed; curl 56 GnuTLS recv error (-9): Error decoding the received TLS packet.
+      #   error: <so-many> bytes of body are still expected
+      #   fetch-pack: unexpected disconnect while reading sideband packet
+      #   fatal: early EOF
+      #   fatal: fetch-pack: invalid index-pack output
+      community.general.git_config:
+        scope: global
+        name: core.compression
+        value: 0
+
+- name: Ensure Ansible user has write access to parent of deployment destination
+  # This ensures that the Ansible user can clone the repository into the
+  # deployment destination.
+  become: true
+  ansible.posix.acl:
+    path: "{{ moodle_deploy_destination | dirname }}"
+    etype: user
+    entity: "{{ ansible_user }}"
+    permissions: rwX
+    state: present
+
+- name: Deploy Moodle source code
+  ansible.builtin.git:
+    repo: "{{ moodle_deploy_repository }}"
+    version: "{{ moodle_deploy_version }}"
+    dest: "{{ moodle_deploy_destination }}"
+    umask: "0002"
+    update: "{{ moodle_deploy_update }}"
+  notify: Upgrade Moodle
+
+- name: Ensure Ansible user has write access to additional plugin directories
+  # This ensures that the Ansible user will have write access to the directories
+  # of plugins that might get installed later via the web interface.
+  become: true
+  ansible.posix.acl:
+    path: "{{ moodle_deploy_destination }}"
+    etype: user
+    entity: "{{ ansible_user }}"
+    permissions: rwX
+    default: true # Means that it applies to new files and directories.
+    recursive: true
+    state: present
+
+- name: Give write access to web server to deployment destination
+  # The web server user needs write access to allow site administrator's to
+  # install plugins.
+  become: true
+  ansible.posix.acl:
+    path: "{{ moodle_deploy_destination }}"
+    etype: user
+    entity: www-data
+    permissions: rwX
+    recursive: true
+    state: present
+  tags:
+    # Because it is recursive, this task cannot be idempotent.
+    - molecule-idempotence-notest
+
+- name: Give write access to web server to new directories in deploy destination
+  # This is for write access to new directories from future updates to source
+  # code.
+  become: true
+  ansible.posix.acl:
+    path: "{{ moodle_deploy_destination }}"
+    etype: user
+    entity: www-data
+    permissions: rwX
+    recursive: true
+    default: true # Means that it applies to new files and directories.
+    state: present

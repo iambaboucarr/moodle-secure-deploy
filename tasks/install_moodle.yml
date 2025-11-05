@@ -1,0 +1,123 @@
+---
+# This file is part of Ansible role geoffreyvanwyk.moodle.
+#
+# Ansible role geoffreyvanwyk.moodle is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible role geoffreyvanwyk.moodle is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Ansible role geoffreyvanwyk.moodle. If not, see
+# <https://www.gnu.org/licenses/>.
+
+##
+# Install Moodle from commandline.
+#
+# @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
+##
+
+- name: Create Moodle data directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ moodle_cfg_dataroot }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: ugo=rwX
+
+- name: Create Moodle's configuration script
+  ansible.builtin.template:
+    src: moodle.config.php.j2
+    dest: "{{ moodle_deploy_destination }}/config.php"
+    mode: u=rw,g=r,o=r
+  tags:
+    # Task cannot be idempotent because of permissions set during deployment.
+    - molecule-idempotence-notest
+
+- name: Has Moodle been installed already?
+  block:
+    - name: Check Moodle database schema
+      ansible.builtin.command:
+        chdir: "{{ moodle_deploy_destination }}"
+        cmd: php{{ php_version }} admin/cli/check_database_schema.php
+      changed_when: false
+      ignore_errors: true
+      register: moodle_check_database_schema
+
+    - name: Establish fact of whether Moodle is installed or not
+      ansible.builtin.set_fact:
+        moodle_is_installed: "{{
+          not moodle_check_database_schema.stdout
+          is
+          search('Database is not yet installed')
+          }}"
+
+- name: Install Moodle database
+  when: not moodle_is_installed
+  vars:
+    command_args:
+      - php{{ php_version }}
+      - admin/cli/install_database.php
+      - --agree-license
+      - --fullname={{ moodle_site_fullname }}
+      - --shortname={{ moodle_site_shortname }}
+      - --summary="{{ moodle_site_summary }}"
+      - --adminuser={{ moodle_admin_username }}
+      - --adminpass={{ moodle_admin_password }}
+      - --adminemail={{ moodle_admin_email }}
+      - "{{
+        ((moodle_version == 3.11)
+        or
+        (moodle_version == 4.0))
+        | ternary(omit, '--supportemail=' + moodle_support_email)
+        }}"
+  ansible.builtin.command:
+    chdir: "{{ moodle_deploy_destination }}"
+    argv: "{{ command_args | reject('equalto', omit) | list }}"
+  changed_when: true
+
+- name: Install cron service
+  become: true
+  ansible.builtin.apt:
+    package: cron
+    state: present
+
+- name: Add cron job for Moodle
+  ansible.builtin.cron:
+    name: "{{ 'Moodle scheduled tasks for ' + moodle_instance }}"
+    job: >-
+      php{{ php_version }}
+      {{ moodle_deploy_destination }}/admin/cli/cron.php
+      >
+      /tmp/cron-{{ moodle_instance }}.log
+    minute: "*"
+  notify: Restart cron service
+
+- name: Give write access to web server to Moodle data directory
+  become: true
+  ansible.posix.acl:
+    path: "{{ moodle_cfg_dataroot }}"
+    etype: user
+    entity: www-data
+    permissions: rwX
+    recursive: true
+    state: present
+  tags:
+    # Because it is recursive, this task cannot be idempotent.
+    - molecule-idempotence-notest
+
+- name: Give write access to web server to new directories in Moodle data directory
+  become: true
+  ansible.posix.acl:
+    path: "{{ moodle_cfg_dataroot }}"
+    etype: user
+    entity: www-data
+    permissions: rwX
+    recursive: true
+    default: true # Means that it applies to new files and directories.
+    state: present

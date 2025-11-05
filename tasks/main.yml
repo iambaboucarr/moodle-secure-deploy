@@ -1,0 +1,44 @@
+---
+# This file is part of Ansible role geoffreyvanwyk.moodle.
+#
+# Ansible role geoffreyvanwyk.moodle is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible role geoffreyvanwyk.moodle is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Ansible role geoffreyvanwyk.moodle. If not, see
+# <https://www.gnu.org/licenses/>.
+
+##
+# Entry point for all tasks performed by the role.
+#
+# @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
+##
+
+- name: Install PHP
+  ansible.builtin.import_tasks: ./install_php.yml
+
+- name: Install database service
+  when: moodle_db_install
+  ansible.builtin.import_tasks: ./install_database_service.yml
+
+- name: Install web service
+  ansible.builtin.import_tasks: ./install_web_service.yml
+
+- name: Deploy Moodle
+  ansible.builtin.import_tasks: ./deploy_source_code.yml
+
+- name: Deploy plugins
+  ansible.builtin.import_tasks: ./deploy_plugins.yml
+
+- name: Install and configure web hosting
+  ansible.builtin.import_tasks: ./configure_web_hosting.yml
+
+- name: Install Moodle and configure server-side
+  ansible.builtin.import_tasks: ./install_moodle.yml

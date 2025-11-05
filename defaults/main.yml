@@ -1,0 +1,159 @@
+---
+# This file is part of Ansible role geoffreyvanwyk.moodle.
+#
+# Ansible role geoffreyvanwyk.moodle is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible role geoffreyvanwyk.moodle is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# Ansible role geoffreyvanwyk.moodle. If not, see
+# <https://www.gnu.org/licenses/>.
+
+##
+# Sets the default values of the role's variables that the user would normally
+# override.
+#
+# @copyright  2023 Geoffrey Bernardo van Wyk {@link https://geoffreyvanwyk.dev}
+# @link       http://tinyurl.com/ansible-variable-precedence
+##
+
+# ------ Basic {{{1
+
+# Served to users (production) or being developed (development)?
+moodle_env: production # or development
+
+# Human-readable format of the Moodle version to be installed.
+moodle_version: "4.3"
+
+# ------ Deployment of Source Code {{{1
+
+# The file system path of the directory to which the Moodle source code should
+# be dowloaded.
+#
+# If the directory does not exist, the role will create it. If it already
+# exists, it should be empty, because Git will not clone a repository into a
+# nonempty directory.
+#
+# The directory should be the document root or subdirectory of the document
+# root of a web service virtualhost, without the trailing slash.
+moodle_deploy_destination: /var/www/html/moodle
+
+# Whether to pull new Git commits from the remote repository if the role is
+# run after the initial installation.
+moodle_deploy_update: true
+
+# ------ Web Hosting {{{1
+
+# Domain name of the web service virtual host.
+moodle_web_domain: 127.0.0.1
+
+# File system path to the document root of the web service virtual host,
+# without the trailing slash.
+moodle_web_documentroot: /var/www/html
+
+# Whether Moodle is served over 'https' or just 'http'.
+moodle_web_protocol: http
+
+# If Moodle is served over 'https', should a TLS certificate be installed with
+# Let's Encrypt (https://letsencrypt.org)?
+moodle_web_letsencrypt: true
+
+# File-system path to the TLS certificate file.
+moodle_web_certificatefile: /etc/letsencrypt/live/{{ moodle_web_domain }}/fullchain.pem
+
+# File-system path to the TLS certificate key file.
+moodle_web_certificatekeyfile: /etc/letsencrypt/live/{{ moodle_web_domain }}/privkey.pem
+
+# ------ Set-Up of Database {{{1
+
+# Whether or not to install a database service.
+moodle_db_install: true
+
+# Which database service to use: PostgreSQL (pgsql) or MariaDB (maridb).
+moodle_db_type: pgsql
+
+# The name of the database.
+moodle_db_name: ""
+
+# If a database service has to be installed, this user will be created with
+# administrative provileges on the database. If the database service is already
+# running on a different server, the user must supply the username and
+# password.
+moodle_db_username: moodler
+
+# If the database service has to be installed, a random string is generated
+# for the database password. If the database service is already running on a
+# different server, the user must supply the username and password.
+moodle_db_password: "{{
+  lookup('ansible.builtin.password',
+  '/tmp/' + moodle_db_username + '-db_password',
+  length=24,
+  chars=['ascii_letters', 'digits'])
+  }}"
+
+# ------ Install & Server-side Configuration {{{1
+
+# Name and description of the Moodle instance.
+moodle_site_fullname: Modular Object-Oriented Dynamic Learning Environment
+moodle_site_shortname: Moodle
+moodle_site_summary: >-
+  Moodle is the world’s most customisable and trusted eLearning solution that
+  empowers educators to improve our world.
+
+# Site administrator credentials.
+moodle_admin_username: moodler
+moodle_admin_password: N3verstople@rning
+moodle_admin_email: moodler@never.stops.learning
+moodle_support_email: "{{ moodle_admin_email }}"
+
+# A dictionary of settings placed in config.php so that the site administrator
+# cannot change them, e.g.
+#
+# moodle_cfg_forcedsettings:
+#   additionalhtmlfooter: '<style>p {color: red}</style>'
+#   enabledashboard: 0
+#   navcourselimit: 12
+moodle_cfg_forcedsettings: {}
+
+# ------ Extend with Plugins {{{1
+
+# Directory into which zip archives of plugins are downloaded from the Moodle
+# Plugins Directory.
+#
+# The presence of a zip archive in this directory determines whether a specific
+# plugin version will be redownloaded, extracted and installed.
+moodle_plugin_archives: "{{ ansible_env.HOME }}/moodle_plugin_archives"
+
+# Download and install plugins from the Moodle Plugins Directory
+# (https://moodle.org/plugins). For each plugin, specify its name and the URL
+# to the zip archive containing a version compatible with the Moodle version.
+# For example:
+#
+# moodle_plugins:
+#   - name: availability_xp
+#     archive: "{{
+#       'https://moodle.org/plugins/'
+#       'download.php/30440/availability_xp_moodle44_2023110700.zip' }}"
+#   - name: mod_customcert
+#     archive: "{{
+#       'https://moodle.org/plugins/'
+#       'download.php/32229/mod_customcert_moodle43_2023100901.zip' }}"
+moodle_plugins: []
+
+# Download plugins from a public Git repository. For example:
+#
+# moodle_plugins_git;
+#   - name: block_todos
+#     repository: https://github.com/example/moodle-block_todos
+#     version: master
+#   - name: theme_learningsandboxonline
+#     repository: >-
+#       https://github.com/geoffreyvanwyk/moodle-theme_learningsandboxonline
+#     version: MOODLE_403_STABLE
+moodle_plugins_git: []

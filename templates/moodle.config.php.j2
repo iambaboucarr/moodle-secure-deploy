@@ -1,0 +1,1126 @@
+<?php
+///////////////////////////////////////////////////////////////////////////
+//                                                                       //
+// Moodle configuration file                                             //
+//                                                                       //
+// This file should be renamed "config.php" in the top-level directory   //
+//                                                                       //
+///////////////////////////////////////////////////////////////////////////
+//                                                                       //
+// NOTICE OF COPYRIGHT                                                   //
+//                                                                       //
+// Moodle - Modular Object-Oriented Dynamic Learning Environment         //
+//          http://moodle.org                                            //
+//                                                                       //
+// Copyright (C) 1999 onwards  Martin Dougiamas  http://moodle.com       //
+//                                                                       //
+// This program is free software; you can redistribute it and/or modify  //
+// it under the terms of the GNU General Public License as published by  //
+// the Free Software Foundation; either version 3 of the License, or     //
+// (at your option) any later version.                                   //
+//                                                                       //
+// This program is distributed in the hope that it will be useful,       //
+// but WITHOUT ANY WARRANTY; without even the implied warranty of        //
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         //
+// GNU General Public License for more details:                          //
+//                                                                       //
+//          http://www.gnu.org/copyleft/gpl.html                         //
+//                                                                       //
+///////////////////////////////////////////////////////////////////////////
+unset($CFG);  // Ignore this line
+global $CFG;  // This is necessary here for PHPUnit execution
+$CFG = new stdClass();
+
+//=========================================================================
+// 1. DATABASE SETUP
+//=========================================================================
+// First, you need to configure the database where all Moodle data       //
+// will be stored.  This database must already have been created         //
+// and a username/password created to access it.                         //
+
+$CFG->dbtype    = '{{ moodle_cfg_dbtype }}';                        // 'pgsql', 'mariadb', 'mysqli', 'auroramysql', 'sqlsrv' or 'oci'
+$CFG->dblibrary = 'native';                                         // 'native' only at the moment
+$CFG->dbhost    = '{{ moodle_cfg_dbhost | default("127.0.0.1") }}'; // eg 'localhost' or 'db.isp.com' or IP
+$CFG->dbname    = '{{ moodle_cfg_dbname }}';                        // database name, eg moodle
+$CFG->dbuser    = '{{ moodle_cfg_dbuser }}';                        // your database username
+$CFG->dbpass    = '{{ moodle_cfg_dbpass }}';                        // your database password
+$CFG->prefix    = '{{ moodle_cfg_prefix | default("mdl_") }}';      // prefix to use for all table names
+$CFG->dboptions = {{ moodle_cfg_dboptions | default("['dbcollation' => 'utf8mb4_unicode_ci']")}};
+
+
+//=========================================================================
+// 2. WEB SITE LOCATION
+//=========================================================================
+// Now you need to tell Moodle where it is located. Specify the full
+// web address to where moodle has been installed.  If your web site
+// is accessible via multiple URLs then choose the most natural one
+// that your students would use.  Do not include a trailing slash
+//
+// If you need both intranet and Internet access please read
+// http://docs.moodle.org/en/masquerading
+
+$CFG->wwwroot   = '{{ moodle_cfg_wwwroot }}';
+
+
+//=========================================================================
+// 3. DATA FILES LOCATION
+//=========================================================================
+// Now you need a place where Moodle can save uploaded files.  This
+// directory should be readable AND WRITEABLE by the web server user
+// (usually 'nobody' or 'apache'), but it should not be accessible
+// directly via the web.
+//
+// - On hosting systems you might need to make sure that your "group" has
+//   no permissions at all, but that "others" have full permissions.
+//
+// - On Windows systems you might specify something like 'c:\moodledata'
+
+$CFG->dataroot  = '{{ moodle_cfg_dataroot }}';
+
+
+//=========================================================================
+// 4. DATA FILES PERMISSIONS
+//=========================================================================
+// The following parameter sets the permissions of new directories
+// created by Moodle within the data directory.  The format is in
+// octal format (as used by the Unix utility chmod, for example).
+// The default is usually OK, but you may want to change it to 0750
+// if you are concerned about world-access to the files (you will need
+// to make sure the web server process (eg Apache) can access the files.
+// NOTE: the prefixed 0 is important, and don't use quotes.
+
+$CFG->directorypermissions = {{ moodle_cfg_directorypermissions }};
+
+
+//=========================================================================
+// 5. ADMIN DIRECTORY LOCATION  (deprecated)
+//=========================================================================
+// Please note: Support from this feature has been deprecated and it will be
+// removed after Moodle 4.2.
+//
+// A very few webhosts use /admin as a special URL for you to access a
+// control panel or something.  Unfortunately this conflicts with the
+// standard location for the Moodle admin pages.  You can work around this
+// by renaming the admin directory in your installation, and putting that
+// new name here.  eg "moodleadmin".  This should fix all admin links in Moodle.
+// After any change you need to visit your new admin directory
+// and purge all caches.
+
+$CFG->admin = '{{ moodle_cfg_admin | default("admin") }}';
+
+
+//=========================================================================
+// 6. OTHER MISCELLANEOUS SETTINGS (ignore these for new installations)
+//=========================================================================
+//
+// These are additional tweaks for which no GUI exists in Moodle yet.
+//
+// Starting in PHP 5.3 administrators should specify default timezone
+// in PHP.ini, you can also specify it here if needed.
+// See details at: http://php.net/manual/en/function.date-default-timezone-set.php
+// List of time zones at: http://php.net/manual/en/timezones.php
+{{ (moodle_cfg_date_default_timezone_set is not defined) | ternary('//', '  ') }}      date_default_timezone_set({{ moodle_cfg_date_default_timezone_set | default("'Australia/Perth'") }});
+//
+// Change the key pair lifetime for Moodle Networking
+// The default is 28 days. You would only want to change this if the key
+// was not getting regenerated for any reason. You would probably want
+// make it much longer. Note that you'll need to delete and manually update
+// any existing key.
+{{ (moodle_cfg_mnetkeylifetime is not defined) | ternary('//', '  ') }}      $CFG->mnetkeylifetime = {{ moodle_cfg_mnetkeylifetime | default(28) }};
+//
+// Not recommended: Set the following to true to allow the use
+// off non-Moodle standard characters in usernames.
+{{ (moodle_cfg_extendedusernamechars is not defined) | ternary('//', '  ') }}      $CFG->extendedusernamechars = {{ moodle_cfg_extendedusernamechars | default(true) }};
+//
+// Allow user passwords to be included in backup files. Very dangerous
+// setting as far as it publishes password hashes that can be unencrypted
+// if the backup file is publicy available. Use it only if you can guarantee
+// that all your backup files remain only privacy available and are never
+// shared out from your site/institution!
+{{ (moodle_cfg_includeuserpasswordsinbackup is not defined) | ternary('//', '  ') }}      $CFG->includeuserpasswordsinbackup = {{ moodle_cfg_includeuserpasswordsinbackup | default(true) }};
+//
+// Completely disable user creation when restoring a course, bypassing any
+// permissions granted via roles and capabilities. Enabling this setting
+// results in the restore process stopping when a user attempts to restore a
+// course requiring users to be created.
+{{ (moodle_cfg_disableusercreationonrestore is not defined) | ternary('//', '  ') }}     $CFG->disableusercreationonrestore = {{ moodle_cfg_disableusercreationonrestore | default(true) }};
+//
+// Keep the temporary directories used by backup and restore without being
+// deleted at the end of the process. Use it if you want to debug / view
+// all the information stored there after the process has ended. Note that
+// those directories may be deleted (after some ttl) both by cron and / or
+// by new backup / restore invocations.
+{{ (moodle_cfg_keeptempdirectoriesonbackup is not defined) | ternary('//', '  ') }}     $CFG->keeptempdirectoriesonbackup = {{ moodle_cfg_keeptempdirectoriesonbackup | default(true) }};
+//
+// Modify the restore process in order to force the "user checks" to assume
+// that the backup originated from a different site, so detection of matching
+// users is performed with different (more "relaxed") rules. Note that this is
+// only useful if the backup file has been created using Moodle < 1.9.4 and the
+// site has been rebuilt from scratch using backup files (not the best way btw).
+// If you obtain user conflicts on restore, rather than enabling this setting
+// permanently, try restoring the backup on a different site, back it up again
+// and then restore on the target server.
+{{ (moodle_cfg_forcedifferentsitecheckingusersonrestore is not defined) | ternary('//', '  ') }}    $CFG->forcedifferentsitecheckingusersonrestore = {{ moodle_cfg_forcedifferentsitecheckingusersonrestore | default(true) }};
+//
+// Force the backup system to continue to create backups in the legacy zip
+// format instead of the new tgz format. Does not affect restore, which
+// auto-detects the underlying file format.
+{{ (moodle_cfg_usezipbackups is not defined) | ternary('//', '  ') }}    $CFG->usezipbackups = {{ moodle_cfg_usezipbackups | default(true) }};
+//
+// Prevent stats processing and hide the GUI
+{{ (moodle_cfg_disablestatsprocessing is not defined) | ternary('//', '  ') }}      $CFG->disablestatsprocessing = {{ moodle_cfg_disablestatsprocessing | default(true) }};
+//
+// Setting this to true will enable admins to edit any post at any time
+{{ (moodle_cfg_admineditalways is not defined) | ternary('//', '  ') }}      $CFG->admineditalways = {{ moodle_cfg_admineditalways | default(true) }};
+//
+// These variables define DEFAULT block variables for new courses
+// If this one is set it overrides all others and is the only one used.
+{{ (moodle_cfg_defaultblocks_override is not defined) | ternary('//', '  ') }}      $CFG->defaultblocks_override = {{ moodle_cfg_defaultblocks_override | default("'activity_modules,search_forums,course_list:news_items,calendar_upcoming,recent_activity'") }};
+//
+// These variables define the specific settings for defined course formats.
+// They override any settings defined in the formats own config file.
+{{ (moodle_cfg_defaultblocks_site is not defined) | ternary('//', '  ') }}      $CFG->defaultblocks_site = {{ moodle_cfg_defaultblocks_site | default("'site_main_menu,course_list:course_summary,calendar_month'") }};
+{{ (moodle_cfg_defaultblocks_social is not defined) | ternary('//', '  ') }}      $CFG->defaultblocks_social = {{ moodle_cfg_defaultblocks_social | default("'search_forums,calendar_month,calendar_upcoming,social_activities,recent_activity,course_list'") }};
+{{ (moodle_cfg_defaultblocks_topics is not defined) | ternary('//', '  ') }}      $CFG->defaultblocks_topics = {{ moodle_cfg_defaultblocks_topics | default("'activity_modules,search_forums,course_list:news_items,calendar_upcoming,recent_activity'") }};
+{{ (moodle_cfg_defaultblocks_weeks is not defined) | ternary('//', '  ') }}      $CFG->defaultblocks_weeks = {{ moodle_cfg_defaultblocks_weeks | default("'activity_modules,search_forums,course_list:news_items,calendar_upcoming,recent_activity'") }};
+//
+// These blocks are used when no other default setting is found.
+{{ (moodle_cfg_defaultblocks is not defined) | ternary('//', '  ') }}      $CFG->defaultblocks = {{ moodle_cfg_defaultblocks | default("'activity_modules,search_forums,course_list:news_items,calendar_upcoming,recent_activity'") }};
+//
+// You can specify a different class to be created for the $PAGE global, and to
+// compute which blocks appear on each page. However, I cannot think of any good
+// reason why you would need to change that. It just felt wrong to hard-code the
+// the class name. You are strongly advised not to use these to settings unless
+// you are absolutely sure you know what you are doing.
+{{ (moodle_cfg_moodlepageclass is not defined) | ternary('//', '  ') }}      $CFG->moodlepageclass = {{ moodle_cfg_moodlepageclass | default("'moodle_page'") }};
+{{ (moodle_cfg_moodlepageclassfile is not defined) | ternary('//', '  ') }}      $CFG->moodlepageclassfile = {{ moodle_cfg_moodlepageclassfile | default('"$CFG->dirroot/local/myplugin/mypageclass.php"') }};
+{{ (moodle_cfg_blockmanagerclass is not defined) | ternary('//', '  ') }}      $CFG->blockmanagerclass = {{ moodle_cfg_blockmanagerclass | default("'block_manager'") }};
+{{ (moodle_cfg_blockmanagerclassfile is not defined) | ternary('//', '  ') }}      $CFG->blockmanagerclassfile = {{ moodle_cfg_blockmanagerclassfile | default('"$CFG->dirroot/local/myplugin/myblockamanagerclass.php"') }};
+//
+// Seconds for files to remain in caches. Decrease this if you are worried
+// about students being served outdated versions of uploaded files.
+{{ (moodle_cfg_filelifetime is not defined) | ternary('//', '  ') }}     $CFG->filelifetime = {{ moodle_cfg_filelifetime | default(60*60*6) }};
+//
+// Some web servers can offload the file serving from PHP process.
+// Comment out the line below enable it in Moodle.
+// Possible values are:
+// - 'X-Sendfile' for Apache {@see https://tn123.org/mod_xsendfile/}
+// - 'X-LIGHTTPD-send-file' for Lighttpd {@see http://redmine.lighttpd.net/projects/lighttpd/wiki/X-LIGHTTPD-send-file}
+// - 'X-Accel-Redirect' for Nginx {@see http://wiki.nginx.org/XSendfile}
+{{ (moodle_cfg_xsendfile is not defined) | ternary('//', '  ') }}     $CFG->xsendfile = {{ moodle_cfg_xsendfile | default("'X-Sendfile'") }};
+// If your X-Sendfile implementation (usually Nginx) uses directory aliases specify them
+// in the following array setting:
+{{ (moodle_cfg_xsendfilealiases is not defined) | ternary('//', '  ') }}     $CFG->xsendfilealiases = {{ moodle_cfg_xsendfilealiases | default("['/dataroot/' => $CFG->dataroot, '/cachedir/' => '/var/www/moodle/cache', '/localcachedir/' => '/var/local/cache', '/tempdir/' => '/var/www/moodle/temp', '/filedir' => '/var/www/moodle/filedir']") }};
+//
+// YUI caching may be sometimes improved by slasharguments:
+{{ (moodle_cfg_yuislasharguments is not defined) | ternary('//', '  ') }}     $CFG->yuislasharguments = {{ moodle_cfg_yuislasharguments | default(1) }};
+// Some servers may need a special rewrite rule to work around internal path length limitations:
+// RewriteRule (^.*/theme/yui_combo\.php)(/.*) $1?file=$2
+//
+//
+// Following settings may be used to select session driver, uncomment only one of the handlers.
+//   Database session handler (not compatible with MyISAM):
+{{ (moodle_cfg_session_handler_class is not defined) | ternary('//', '  ') }}      $CFG->session_handler_class = {{ moodle_cfg_session_handler_class | default("'\\core\\session\\database'") }};
+{{ (moodle_cfg_session_database_acquire_lock_timeout is not defined) | ternary('//', '  ') }}      $CFG->session_database_acquire_lock_timeout = {{ moodle_cfg_session_database_acquire_lock_timeout | default(120) }};
+//
+//   File session handler (file system locking required):
+{{ (moodle_cfg_session_handler_class is not defined) | ternary('//', '  ') }}      $CFG->session_handler_class = {{ moodle_cfg_session_handler_class | default("'\\core\\session\\file'") }};
+{{ (moodle_cfg_session_file_save_path is not defined) | ternary('//', '  ') }}      $CFG->session_file_save_path = {{ moodle_cfg_session_file_save_path | default("$CFG->dataroot.'/sessions'") }};
+//
+//   Memcached session handler (requires memcached server and extension):
+{{ (moodle_cfg_session_handler_class is not defined) | ternary('//', '  ') }}      $CFG->session_handler_class = {{ moodle_cfg_session_handler_class | default("'\\core\\session\\memcached'") }};
+{{ (moodle_cfg_session_memcached_save_path is not defined) | ternary('//', '  ') }}      $CFG->session_memcached_save_path = {{ moodle_cfg_session_memcached_save_path | default("'127.0.0.1:11211'") }};
+{{ (moodle_cfg_session_memcached_prefix is not defined) | ternary('//', '  ') }}      $CFG->session_memcached_prefix = {{ moodle_cfg_session_memcached_prefix | default("'memc.sess.key.'") }};
+{{ (moodle_cfg_session_memcached_acquire_lock_timeout is not defined) | ternary('//', '  ') }}      $CFG->session_memcached_acquire_lock_timeout = {{ moodle_cfg_session_memcached_acquire_lock_timeout | default(120) }};
+{{ (moodle_cfg_session_memcached_lock_expire is not defined) | ternary('//', '  ') }}      $CFG->session_memcached_lock_expire = {{ moodle_cfg_session_memcached_lock_expire | default(7200) }};       // Ignored if PECL memcached is below version 2.2.0
+{{ (moodle_cfg_session_memcached_lock_retry_sleep is not defined) | ternary('//', '  ') }}      $CFG->session_memcached_lock_retry_sleep = {{ moodle_cfg_session_memcached_lock_retry_sleep | default(150) }};   // Spin-lock retry sleeptime (msec). Only effective
+//                                                        // for tuning php-memcached 3.0.x (PHP 7)
+//
+//   Redis session handler (requires redis server and redis extension):
+{{ (moodle_cfg_session_handler_class is not defined) | ternary('//', '  ') }}      $CFG->session_handler_class = {{ moodle_cfg_session_handler_class | default('"\\core\\session\\redis"') }};
+{{ (moodle_cfg_session_redis_host is not defined) | ternary('//', '  ') }}      $CFG->session_redis_host = {{ moodle_cfg_session_redis_host | default("'127.0.0.1'") }};
+{{ (moodle_cfg_session_redis_port is not defined) | ternary('//', '  ') }}      $CFG->session_redis_port = {{ moodle_cfg_session_redis_port | default(6379) }};                     // Optional.
+{{ (moodle_cfg_session_redis_database is not defined) | ternary('//', '  ') }}      $CFG->session_redis_database = {{ moodle_cfg_session_redis_database | default(0) }};                    // Optional, default is db 0.
+{{ (moodle_cfg_session_redis_auth is not defined) | ternary('//', '  ') }}      $CFG->session_redis_auth = {{ moodle_cfg_session_redis_auth | default("''") }};                       // Optional, default is don't set one.
+{{ (moodle_cfg_session_redis_prefix is not defined) | ternary('//', '  ') }}      $CFG->session_redis_prefix = {{ moodle_cfg_session_redis_prefix | default("''") }};                     // Optional, default is don't set one.
+{{ (moodle_cfg_session_redis_acquire_lock_timeout is not defined) | ternary('//', '  ') }}      $CFG->session_redis_acquire_lock_timeout = {{ moodle_cfg_session_redis_acquire_lock_timeout | default(120) }};      // Default is 2 minutes.
+{{ (moodle_cfg_session_redis_acquire_lock_warn is not defined) | ternary('//', '  ') }}      $CFG->session_redis_acquire_lock_warn = {{ moodle_cfg_session_redis_acquire_lock_warn | default(0) }};           // If set logs early warning if a lock has not been acquried.
+{{ (moodle_cfg_session_redis_lock_expire is not defined) | ternary('//', '  ') }}      $CFG->session_redis_lock_expire = {{ moodle_cfg_session_redis_lock_expire | default(7200) }};              // Optional, defaults to session timeout.
+{{ (moodle_cfg_session_redis_lock_retry is not defined) | ternary('//', '  ') }}      $CFG->session_redis_lock_retry = {{ moodle_cfg_session_redis_lock_retry | default(100) }};                // Optional wait between lock attempts in ms, default is 100.
+//                                                           // After 5 seconds it will throttle down to once per second.
+//
+//      Use the igbinary serializer instead of the php default one. Note that phpredis must be compiled with
+//      igbinary support to make the setting to work. Also, if you change the serializer you have to flush the database!
+{{ (moodle_cfg_session_redis_serializer_use_igbinary is not defined) | ternary('//', '  ') }}      $CFG->session_redis_serializer_use_igbinary = {{ moodle_cfg_session_redis_serializer_use_igbinary | default(false) }}; // Optional, default is PHP builtin serializer.
+{{ (moodle_cfg_session_redis_compressor is not defined) | ternary('//', '  ') }}      $CFG->session_redis_compressor = {{ moodle_cfg_session_redis_compressor | default("'none'") }};             // Optional, possible values are:
+//                                                           // 'gzip' - PHP GZip compression
+//                                                           // 'zstd' - PHP Zstandard compression
+//
+// Please be aware that when selecting Memcached for sessions that it is advised to use a dedicated
+// memcache server. The memcached extension does not provide isolated environments for individual uses.
+// Using the same server for other purposes (MUC for example) can lead to sessions being prematurely removed should
+// the other uses of the server purge the cache.
+//
+// Following setting allows you to alter how frequently is timemodified updated in sessions table.
+{{ (moodle_cfg_session_update_timemodified_frequency is not defined) | ternary('//', '  ') }}      $CFG->session_update_timemodified_frequency = {{ moodle_cfg_session_update_timemodified_frequency | default(20) }}; // In seconds.
+//
+// If this setting is set to true, then Moodle will track the IP of the
+// current user to make sure it hasn't changed during a session.  This
+// will prevent the possibility of sessions being hijacked via XSS, but it
+// may break things for users coming using proxies that change all the time,
+// like AOL.
+{{ (moodle_cfg_tracksessionip is not defined) | ternary('//', '  ') }}      $CFG->tracksessionip = {{ moodle_cfg_tracksessionip | default(true) }};
+//
+// The following lines are for handling email bounces.
+{{ (moodle_cfg_handlebounces is not defined) | ternary('//', '  ') }}      $CFG->handlebounces = {{ moodle_cfg_handlebounces | default(true) }};
+{{ (moodle_cfg_minbounces is not defined) | ternary('//', '  ') }}      $CFG->minbounces = {{ moodle_cfg_minbounces | default(10) }};
+{{ (moodle_cfg_bounceratio is not defined) | ternary('//', '  ') }}      $CFG->bounceratio = {{ moodle_cfg_bounceratio | default('.20') }};
+// The next lines are needed both for bounce handling and any other email to module processing.
+// mailprefix must be EXACTLY four characters.
+// Uncomment and customise this block for Postfix
+// + is the separator for Exim and Postfix.
+// - is the separator for qmail
+{{ (moodle_cfg_mailprefix is not defined) | ternary('//', '  ') }}      $CFG->mailprefix = {{ moodle_cfg_mailprefix | default("'mdl+'") }};
+{{ (moodle_cfg_maildomain is not defined) | ternary('//', '  ') }}      $CFG->maildomain = {{ moodle_cfg_maildomain | default("'youremaildomain.com'") }};
+//
+// Enable when setting up advanced reverse proxy load balancing configurations,
+// it may be also necessary to enable this when using port forwarding.
+{{ (moodle_cfg_reverseproxy is not defined) | ternary('//', '  ') }}      $CFG->reverseproxy = {{ moodle_cfg_reverseproxy | default(true) }};
+//
+// Enable when using external SSL appliance for performance reasons.
+// Please note that site may be accessible via http: or https:, but not both!
+{{ (moodle_cfg_sslproxy is not defined) | ternary('//', '  ') }}      $CFG->sslproxy = {{ moodle_cfg_sslproxy | default(true) }};
+//
+// This setting will cause the userdate() function not to fix %d in
+// date strings, and just let them show with a zero prefix.
+{{ (moodle_cfg_nofixday is not defined) | ternary('//', '  ') }}      $CFG->nofixday = {{ moodle_cfg_nofixday | default(true) }};
+//
+// This setting will make some graphs (eg user logs) use lines instead of bars
+{{ (moodle_cfg_preferlinegraphs is not defined) | ternary('//', '  ') }}      $CFG->preferlinegraphs = {{ moodle_cfg_preferlinegraphs | default(true) }};
+//
+// This setting allows you to specify a class to rewrite outgoing urls
+// enabling 'clean urls' in conjunction with an apache / nginx handler.
+// The handler must implement \core\output\url_rewriter.
+{{ (moodle_cfg_urlrewriteclass is not defined) | ternary('//', '  ') }}      $CFG->urlrewriteclass = {{ moodle_cfg_urlrewriteclass | default("'\\local_cleanurls\\url_rewriter'") }};
+//
+// Enabling this will allow custom scripts to replace existing moodle scripts.
+// For example: if $CFG->customscripts/course/view.php exists then
+// it will be used instead of $CFG->wwwroot/course/view.php
+// At present this will only work for files that include config.php and are called
+// as part of the url (index.php is implied).
+// Some examples are:
+//      http://my.moodle.site/course/view.php
+//      http://my.moodle.site/index.php
+//      http://my.moodle.site/admin            (index.php implied)
+// Custom scripts should not include config.php
+// Warning: Replacing standard moodle scripts may pose security risks and/or may not
+// be compatible with upgrades. Use this option only if you are aware of the risks
+// involved.
+// Specify the full directory path to the custom scripts
+{{ (moodle_cfg_customscripts is not defined) | ternary('//', '  ') }}      $CFG->customscripts = {{ moodle_cfg_customscripts | default("'/home/example/customscripts'") }};
+//
+// Performance profiling
+//
+//   If you set Debug to "Yes" in the Configuration->Variables page some
+//   performance profiling data will show up on your footer (in default theme).
+//   With these settings you get more granular control over the capture
+//   and printout of the data
+//
+//   Capture performance profiling data
+//   define('MDL_PERF'  , true);
+//
+//   Capture additional data from DB
+//   define('MDL_PERFDB'  , true);
+//
+//   Print to log (for passive profiling of production servers)
+//   define('MDL_PERFTOLOG'  , true);
+//
+//   Print to footer (works with the default theme)
+//   define('MDL_PERFTOFOOT', true);
+//
+//   Print additional data to log of included files
+//   define('MDL_PERFINC', true);
+//
+//   Enable earlier profiling that causes more code to be covered
+//   on every request (db connections, config load, other inits...).
+//   Requires extra configuration to be defined in config.php like:
+//   profilingincluded, profilingexcluded, profilingautofrec,
+//   profilingallowme, profilingallowall, profilinglifetime
+//       $CFG->earlyprofilingenabled = true;
+//
+// Disable database storage for profile data.
+// When using an exernal plugin to store profiling data it is often
+// desirable to not store the data in the database.
+//
+//      $CFG->disableprofilingtodatabase = true;
+//
+// Force displayed usernames
+//   A little hack to anonymise user names for all students.  If you set these
+//   then all non-teachers will always see these for every person.
+{{ (moodle_cfg_forcefirstname is not defined) | ternary('//', '  ') }}       $CFG->forcefirstname = {{ moodle_cfg_forcefirstname | default("'Bruce'") }};
+{{ (moodle_cfg_forcelastname  is not defined) | ternary('//', '  ') }}       $CFG->forcelastname  = {{ moodle_cfg_forcelastname  | default("'Simpson'") }};
+//
+// The following setting will turn on username logging into Apache log. For full details regarding setting
+// up of this function please refer to the install section of the document.
+// Possible values are:
+// 0 - Turn this feature off. Default value.
+// 1 - Log user id.
+// 2 - Log full name in cleaned format. ie, Darth Vader will be displayed as darth_vader.
+// 3 - Log username.
+{{ (moodle_cfg_apacheloguser is not defined) | ternary('//', '  ') }}     $CFG->apacheloguser = {{ moodle_cfg_apacheloguser | default(0) }};
+// To get the values logged in Apache's log, add to your httpd.conf
+// the following statements. In the General part put:
+//     LogFormat "%h %l %{MOODLEUSER}n %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\"" moodleformat
+// And in the part specific to your Moodle install / virtualhost:
+//     CustomLog "/your/path/to/log" moodleformat
+//
+// Alternatively for other webservers such as nginx, you can instead have the username sent via a http header
+// 'X-MOODLEUSER' which can be saved in the logfile and then stripped out before being sent to the browser:
+// Possible values are:
+// 0 - Turn this feature off. Default value.
+// 1 - Log user id.
+// 2 - Log full name in cleaned format. ie, Darth Vader will be displayed as darth_vader.
+// 3 - Log username.
+{{ (moodle_cfg_headerloguser is not defined) | ternary('//', '  ') }}     $CFG->headerloguser = {{ moodle_cfg_headerloguser | default(0) }};
+//
+// CAUTION: Use of this option will expose usernames in the Apache / nginx log,
+// If you are going to publish your log, or the output of your web stats analyzer
+// this will weaken the security of your website.
+//
+// Email database connection errors to someone.  If Moodle cannot connect to the
+// database, then email this address with a notice.
+//
+{{ (moodle_cfg_emailconnectionerrorsto is not defined) | ternary('//', '  ') }}     $CFG->emailconnectionerrorsto = {{ moodle_cfg_emailconnectionerrorsto | default("'your@emailaddress.com'") }};
+//
+// Set the priority of themes from highest to lowest. This is useful (for
+// example) in sites where the user theme should override all other theme
+// settings for accessibility reasons. You can also disable types of themes
+// (other than site)  by removing them from the array. The default setting is:
+//
+{{ (moodle_cfg_themeorder is not defined) | ternary('//', '  ') }}     $CFG->themeorder = {{ moodle_cfg_themeorder | default("['course', 'category', 'session', 'user', 'cohort', 'site']") }};
+//
+// NOTE: course, category, session, user, cohort themes still require the
+// respective settings to be enabled
+//
+// It is possible to add extra themes directory stored outside of $CFG->dirroot.
+// This local directory does not have to be accessible from internet.
+//
+{{ (moodle_cfg_themedir is not defined) | ternary('//', '  ') }}     $CFG->themedir = '{{ moodle_cfg_themedir | default('/location/of/extra/themes') }}';
+//
+// It is possible to specify different cache and temp directories, use local fast filesystem
+// for normal web servers. Server clusters MUST use shared filesystem for cachedir!
+// Localcachedir is intended for server clusters, it does not have to be shared by cluster nodes.
+// The directories must not be accessible via web.
+//
+{{ (moodle_cfg_tempdir is not defined) | ternary('//', '  ') }}     $CFG->tempdir = {{ moodle_cfg_tempdir | default("'/var/www/moodle/temp'") }};        // Directory MUST BE SHARED by all cluster nodes.
+{{ (moodle_cfg_cachedir is not defined) | ternary('//', '  ') }}     $CFG->cachedir = {{ moodle_cfg_cachedir | default("'/var/www/moodle/cache'") }};      // Directory MUST BE SHARED by all cluster nodes, locking required.
+{{ (moodle_cfg_localcachedir is not defined) | ternary('//', '  ') }}     $CFG->localcachedir = {{ moodle_cfg_localcachedir | default("'/var/local/cache'") }};      // Intended for local node caching.
+{{ (moodle_cfg_localrequestdir is not defined) | ternary('//', '  ') }}     $CFG->localrequestdir = {{ moodle_cfg_localrequestdir | default("'/tmp'") }};                // Intended for local only temporary files. The defaults uses sys_get_temp_dir().
+//
+// It is possible to specify a different backup temp directory, use local fast filesystem
+// for normal web servers. Server clusters MUST use shared filesystem for backuptempdir!
+// The directory must not be accessible via web.
+//
+{{ (moodle_cfg_backuptempdir is not defined) | ternary('//', '  ') }}     $CFG->backuptempdir = {{ moodle_cfg_backuptempdir | default("'/var/www/moodle/backuptemp'") }};  // Directory MUST BE SHARED by all cluster nodes.
+//
+// Some filesystems such as NFS may not support file locking operations.
+// Locking resolves race conditions and is strongly recommended for production servers.
+{{ (moodle_cfg_preventfilelocking is not defined) | ternary('//', '  ') }}     $CFG->preventfilelocking = {{ moodle_cfg_preventfilelocking | default(false) }};
+//
+// Site default language can be set via standard administration interface. If you
+// want to have initial error messages for eventual database connection problems
+// localized too, you have to set your language code here.
+//
+$CFG->lang = '{{ moodle_cfg_lang | default("en") }}'; // for example 'cs'
+//
+// When Moodle is about to perform an intensive operation it raises PHP's memory
+// limit. The following setting should be used on large sites to set the raised
+// memory limit to something higher.
+// The value for the settings should be a valid PHP memory value. e.g. 512M, 1G
+//
+{{ (moodle_cfg_extramemorylimit is not defined) | ternary('//', '  ') }}     $CFG->extramemorylimit = {{ moodle_cfg_extramemorylimit | default("'1024M'") }};
+//
+// Moodle 2.4 introduced a new cache API.
+// The cache API stores a configuration file within the Moodle data directory and
+// uses that rather than the database in order to function in a stand-alone manner.
+// Using altcacheconfigpath you can change the location where this config file is
+// looked for.
+// It can either be a directory in which to store the file, or the full path to the
+// file if you want to take full control. Either way it must be writable by the
+// webserver.
+//
+{{ (moodle_cfg_altcacheconfigpath is not defined) | ternary('//', '  ') }}     $CFG->altcacheconfigpath = {{ moodle_cfg_altcacheconfigpath | default("'/var/www/shared/moodle.cache.config.php'") }};
+//
+// Use the following flag to completely disable the Available update notifications
+// feature and hide it from the server administration UI.
+//
+{{ (moodle_cfg_disableupdatenotifications is not defined) | ternary('//', '  ') }}      $CFG->disableupdatenotifications = {{ moodle_cfg_disableupdatenotifications | default(true) }};
+//
+// Use the following flag to completely disable the installation of plugins
+// (new plugins, available updates and missing dependencies) and related
+// features (such as cancelling the plugin installation or upgrade) via the
+// server administration web interface.
+//
+{{ (moodle_cfg_disableupdateautodeploy is not defined) | ternary('//', '  ') }}      $CFG->disableupdateautodeploy = {{ moodle_cfg_disableupdateautodeploy | default(true) }};
+//
+// Use the following flag to disable the warning on the system notifications page
+// about present development libraries. This flag will not disable the warning within
+// the security overview report. Use this flag only if you really have prohibited web
+// access to the development libraries in your webserver configuration.
+//
+{{ (moodle_cfg_disabledevlibdirscheck is not defined) | ternary('//', '  ') }}      $CFG->disabledevlibdirscheck = {{ moodle_cfg_disabledevlibdirscheck | default(true) }};
+//
+// Use the following flag to disable modifications to scheduled tasks
+// whilst still showing the state of tasks.
+//
+{{ (moodle_cfg_preventscheduledtaskchanges is not defined) | ternary('//', '  ') }}      $CFG->preventscheduledtaskchanges = {{ moodle_cfg_preventscheduledtaskchanges | default(true) }};
+//
+// As of version 2.4 Moodle serves icons as SVG images if the users browser appears
+// to support SVG.
+// For those wanting to control the serving of SVG images the following setting can
+// be defined in your config.php.
+// If it is not defined then the default (browser detection) will occur.
+//
+// To ensure they are always used when available, set the following setting to true:
+{{ (moodle_cfg_svgicons is not defined) | ternary('//', '  ') }}      $CFG->svgicons = {{ moodle_cfg_svgicons | default(true) }};
+//
+// Some administration options allow setting the path to executable files. This can
+// potentially cause a security risk. Set this option to true to disable editing
+// those config settings via the web. They will need to be set explicitly in the
+// config.php file
+{{ (moodle_cfg_preventexecpath is not defined) | ternary('//', '  ') }}      $CFG->preventexecpath = {{ moodle_cfg_preventexecpath | default(true) }};
+//
+// Use the following flag to set userid for noreply user. If not set then moodle will
+// create dummy user and use -ve value as user id.
+{{ (moodle_cfg_noreplyuserid is not defined) | ternary('//', '  ') }}      $CFG->noreplyuserid = {{ moodle_cfg_noreplyuserid | default(-10) }};
+//
+// As of version 2.6 Moodle supports admin to set support user. If not set, all mails
+// will be sent to supportemail.
+{{ (moodle_cfg_supportuserid is not defined) | ternary('//', '  ') }}      $CFG->supportuserid = {{ moodle_cfg_supportuserid | default(-20) }};
+//
+// Moodle 2.7 introduces a locking api for critical tasks (e.g. cron).
+// The default locking system to use is DB locking for Postgres, MySQL, MariaDB and
+// file locking for Oracle and SQLServer. If $CFG->preventfilelocking is set, then the
+// default will always be DB locking. It can be manually set to one of the lock
+// factory classes listed below, or one of your own custom classes implementing the
+// \core\lock\lock_factory interface.
+//
+{{ (moodle_cfg_lock_factory is not defined) | ternary('//', '  ') }}      $CFG->lock_factory = {{ moodle_cfg_lock_factory | default("'auto'") }};
+//
+// The list of available lock factories is:
+//
+// "\\core\\lock\\file_lock_factory" - File locking
+//      Uses lock files stored by default in the dataroot. Whether this
+//      works on clusters depends on the file system used for the dataroot.
+//
+// "\\core\\lock\\db_record_lock_factory" - DB locking based on table rows.
+//
+// "\\core\\lock\\mysql_lock_factory" - DB locking based on MySQL / MariaDB locks.
+//
+// "\\core\\lock\\postgres_lock_factory" - DB locking based on postgres advisory locks.
+//
+// Settings used by the lock factories
+//
+// Location for lock files used by the File locking factory. This must exist
+// on a shared file system that supports locking.
+{{ (moodle_cfg_file_lock_root is not defined) | ternary('//', '  ') }}      $CFG->file_lock_root = {{ moodle_cfg_file_lock_root | default("$CFG->dataroot . '/lock'") }};
+//
+//
+// Alternative task logging.
+// Since Moodle 3.7 the output of al scheduled and adhoc tasks is stored in the database and it is possible to use an
+// alternative task logging mechanism.
+// To set the alternative task logging mechanism in config.php you can use the following settings, providing the
+// alternative class name that will be auto-loaded.
+//
+{{ (moodle_cfg_task_log_class is not defined) | ternary('//', '  ') }}      $CFG->task_log_class = {{ moodle_cfg_task_log_class | default("'\local_mytasklogger\logger'") }};
+//
+// Moodle 2.9 allows administrators to customise the list of supported file types.
+// To add a new filetype or override the definition of an existing one, set the
+// customfiletypes variable like this:
+//
+// $CFG->customfiletypes = array(
+//     (object)array(
+//         'extension' => 'frog',
+//         'icon' => 'archive',
+//         'type' => 'application/frog',
+//         'customdescription' => 'Amphibian-related file archive'
+//     )
+// );
+//
+{{ (moodle_cfg_customfiletypes is not defined) | ternary('//', '  ') }} $CFG->customfiletypes = {{ moodle_cfg_customfiletypes | default('[]') }};
+//
+// The extension, icon, and type fields are required. The icon field can refer to
+// any icon inside the pix/f folder. You can also set the customdescription field
+// (shown above) and (for advanced use) the groups, string, and defaulticon fields.
+//
+// Upgrade key
+//
+// If the upgrade key is defined here, then the value must be provided every time
+// the site is being upgraded though the web interface, regardless of whether the
+// administrator is logged in or not. This prevents anonymous access to the upgrade
+// screens where the real authentication and authorization mechanisms can not be
+// relied on.
+//
+// It is strongly recommended to use a value different from your real account
+// password.
+//
+{{ (moodle_cfg_upgradekey is not defined) | ternary('//', '  ') }}      $CFG->upgradekey = {{ moodle_cfg_upgradekey | default("'put_some_password-like_value_here'") }};
+//
+// Font used in exported PDF files. When generating a PDF, Moodle embeds a subset of
+// the font in the PDF file so it will be readable on the widest range of devices.
+// The default font is 'freesans' which is part of the GNU FreeFont collection.
+// The font used to export can be set per-course - a drop down list in the course
+// settings shows all the options specified in the array here. The key must be the
+// font name (e.g., "kozminproregular") and the value is a friendly name, (e.g.,
+// "Kozmin Pro Regular").
+//
+{{ (moodle_cfg_pdfexportfont is not defined) | ternary('//', '  ') }}      $CFG->pdfexportfont = {{ moodle_cfg_pdfexportfont | default("['freesans' => 'FreeSans']") }};
+//
+// Use the following flag to enable messagingallusers and set the default preference
+// value for existing users to allow them to be contacted by other site users.
+//
+{{ (moodle_cfg_keepmessagingallusersenabled is not defined) | ternary('//', '  ') }}      $CFG->keepmessagingallusersenabled = {{ moodle_cfg_keepmessagingallusersenabled | default(true) }};
+//
+// Disable login token validation for login pages. Login token validation is enabled
+// by default unless $CFG->alternateloginurl is set.
+//
+{{ (moodle_cfg_disablelogintoken is not defined) | ternary('//', '  ') }}      $CFG->disablelogintoken = {{ moodle_cfg_disablelogintoken | default(true) }};
+//
+// Moodle 3.7+ checks that cron is running frequently. If the time between cron runs
+// is greater than this value (in seconds), you get a warning on the admin page. (This
+// setting only controls whether or not the warning appears, it has no other effect.)
+//
+{{ (moodle_cfg_expectedcronfrequency is not defined) | ternary('//', '  ') }}      $CFG->expectedcronfrequency = {{ moodle_cfg_expectedcronfrequency | default(200) }};
+//
+// Moodle 3.9+ checks how old tasks are in the ad hoc queue and warns at 10 minutes
+// and errors at 4 hours. Set these to override these limits:
+//
+{{ (moodle_cfg_adhoctaskagewarn is not defined) | ternary('//', '  ') }}      $CFG->adhoctaskagewarn = {{ moodle_cfg_adhoctaskagewarn | default('10 * 60') }};
+{{ (moodle_cfg_adhoctaskageerror is not defined) | ternary('//', '  ') }}      $CFG->adhoctaskageerror = {{ moodle_cfg_adhoctaskageerror | default('4 * 60 * 60') }};
+//
+// Moodle 4.2+ checks how long tasks have been running for at warns at 12 hours
+// and errors at 24 hours. Set these to override these limits:
+//
+{{ (moodle_cfg_taskruntimewarn is not defined) | ternary('//', '  ') }} $CFG->taskruntimewarn = {{ moodle_cfg_taskruntimewarn | default('12 * 60 * 60') }};
+{{ (moodle_cfg_taskruntimeerror is not defined) | ternary('//', '  ') }} $CFG->taskruntimeerror = {{ moodle_cfg_taskruntimeerror | default('24 * 60 * 60') }};
+//
+// This is not to be confused with $CFG->task_adhoc_max_runtime which is how long the
+// php process should be allowed to run for, not each specific task.
+//
+// Session lock warning threshold. Long running pages should release the session using \core\session\manager::write_close().
+// Set this threshold to any value greater than 0 to add developer warnings when a page locks the session for too long.
+// The session should rarely be locked for more than 1 second. The input should be in seconds and may be a float.
+//
+{{ (moodle_cfg_debugsessionlock is not defined) | ternary('//', '  ') }}      $CFG->debugsessionlock = {{ moodle_cfg_debugsessionlock | default(5) }};
+//
+// There are times when a session lock is not required during a request. For a page/service to opt-in whether or not a
+// session lock is required this setting must first be set to 'true'.
+// The session store can not be in the session, please see https://docs.moodle.org/en/Session_handling#Read_only_sessions.
+//
+{{ (moodle_cfg_enable_read_only_sessions is not defined) | ternary('//', '  ') }}      $CFG->enable_read_only_sessions = {{ moodle_cfg_enable_read_only_sessions | default(true) }};
+//
+// To help expose all the edge cases bugs a debug mode is available which shows the same
+// runtime write during readonly errors without actually turning on the readonly sessions:
+//
+{{ (moodle_cfg_enable_read_only_sessions_debug is not defined) | ternary('//', '  ') }}      $CFG->enable_read_only_sessions_debug = {{ moodle_cfg_enable_read_only_sessions_debug | default(true) }};
+//
+// Uninstall plugins from CLI only. This stops admins from uninstalling plugins from the graphical admin
+// user interface, and forces plugins to be uninstalled from the Command Line tool only, found at
+// admin/cli/plugin_uninstall.php.
+//
+{{ (moodle_cfg_uninstallclionly is not defined) | ternary('//', '  ') }}      $CFG->uninstallclionly = {{ moodle_cfg_uninstallclionly | default(true) }};
+//
+// Course and category sorting
+//
+// If the number of courses in a category exceeds $CFG->maxcoursesincategory (10000 by default), it may lead to duplicate
+// sort orders of courses in separated categories. For example:
+// - Category A has the sort order of 10000, and has 10000 courses. The last course will have the sort order of 20000.
+// - Category B has the sort order of 20000, and has a course with the sort order of 20001.
+// - If we add another course in category A, it will have a sort order of 20001,
+// which is the same as the course in category B
+// The duplicate will cause sorting issue and hence we need to increase $CFG->maxcoursesincategory
+// to fix the duplicate sort order
+// Please also make sure $CFG->maxcoursesincategory * MAX_COURSE_CATEGORIES less than max integer.
+//
+{{ (moodle_cfg_maxcoursesincategory is not defined) | ternary('//', '  ') }} $CFG->maxcoursesincategory = {{ moodle_cfg_maxcoursesincategory | default(10000) }};
+//
+// Admin setting encryption
+//
+{{ (moodle_cfg_secretdataroot is not defined) | ternary('//', '  ') }}      $CFG->secretdataroot = {{ moodle_cfg_secretdataroot | default("'/var/www/my_secret_folder'") }};
+//
+// Location to store encryption keys. By default this is $CFG->dataroot/secret; set this if
+// you want to use a different location for increased security (e.g. if too many people have access
+// to the main dataroot, or if you want to avoid using shared storage). Your web server user needs
+// read access to this location, and write access unless you manually create the keys.
+//
+{{ (moodle_cfg_nokeygeneration is not defined) | ternary('//', '  ') }}      $CFG->nokeygeneration = {{ moodle_cfg_nokeygeneration | default(false) }};
+//
+// If you change this to true then the server will give an error if keys don't exist, instead of
+// automatically generating them. This is only needed if you want to ensure that keys are consistent
+// across a cluster when not using shared storage. If you stop the server generating keys, you will
+// need to manually generate them by running 'php admin/cli/generate_key.php'.
+//
+// H5P crossorigin
+//
+{{ (moodle_cfg_h5pcrossorigin is not defined) | ternary('//', '  ') }}      $CFG->h5pcrossorigin = {{ moodle_cfg_h5pcrossorigin | default("'anonymous'") }};
+//
+// Settings this to anonymous will enable CORS requests for media elements to have the credentials
+// flag set to 'same-origin'. This may be needed when using tool_objectfs as an alternative file
+// system with CloudFront configured.
+//
+// Enrolments sync interval
+//
+// The minimum time in seconds between re-synchronization of enrollment via enrol_check_plugins which is
+// a potentially expensive operation and otherwise happens every time a user is authenticated. This only
+// applies to web requests without a session such as webservice calls, tokenpluginfile.php and rss links
+// where the user is re-authenticated on every request. Set it to 0 to force enrollment checking constantly
+// and increase this number to improve performance at the cost of adding a latency for enrollment updates.
+// Defaults to 60 minutes.
+//
+{{ (moodle_cfg_enrolments_sync_interval is not defined) | ternary('//', '  ') }}      $CFG->enrolments_sync_interval = {{ moodle_cfg_enrolments_sync_interval | default(3600) }};
+
+//=========================================================================
+// 7. SETTINGS FOR DEVELOPMENT SERVERS - not intended for production use!!!
+//=========================================================================
+//
+// Force a debugging mode regardless the settings in the site administration
+// @error_reporting(E_ALL | E_STRICT); // NOT FOR PRODUCTION SERVERS!
+// @ini_set('display_errors', '1');    // NOT FOR PRODUCTION SERVERS!
+{{ (moodle_cfg_debug is not defined) | ternary('//', '  ') }} $CFG->debug = {{ moodle_cfg_debug | default('(E_ALL | E_STRICT)') }};   // === DEBUG_DEVELOPER - NOT FOR PRODUCTION SERVERS!
+{{ (moodle_cfg_debugdisplay is not defined) | ternary('//', '  ') }} $CFG->debugdisplay = {{ moodle_cfg_debugdisplay | default(1) }};             // NOT FOR PRODUCTION SERVERS!
+//
+// You can specify a comma separated list of user ids that that always see
+// debug messages, this overrides the debug flag in $CFG->debug and $CFG->debugdisplay
+// for these users only.
+{{ (moodle_cfg_debugusers is not defined) | ternary('//', '  ') }} $CFG->debugusers = {{ moodle_cfg_debugusers | default('2') }};
+//
+// Prevent theme caching
+{{ (moodle_cfg_themedesignermode is not defined) | ternary('//', '  ') }} $CFG->themedesignermode = {{ moodle_cfg_themedesignermode | default(true) }}; // NOT FOR PRODUCTION SERVERS!
+//
+// Enable verbose debug information during fetching of email messages from IMAP server.
+{{ (moodle_cfg_debugimap is not defined) | ternary('//', '  ') }} $CFG->debugimap = {{ moodle_cfg_debugimap | default(true) }};
+//
+// Enable verbose debug information during sending of email messages to SMTP server.
+// Note: also requires $CFG->debug set to DEBUG_DEVELOPER.
+{{ (moodle_cfg_debugsmtp is not defined) | ternary('//', '  ') }} $CFG->debugsmtp = {{ moodle_cfg_debugsmtp | default(true) }};
+//
+// Prevent JS caching
+{{ (moodle_cfg_cachejs is not defined) | ternary('//', '  ') }} $CFG->cachejs = {{ moodle_cfg_cachejs | default(false) }}; // NOT FOR PRODUCTION SERVERS!
+//
+// Prevent Template caching
+{{ (moodle_cfg_cachetemplates is not defined) | ternary('//', '  ') }} $CFG->cachetemplates = {{ moodle_cfg_cachetemplates | default(false) }}; // NOT FOR PRODUCTION SERVERS!
+//
+// Restrict which YUI logging statements are shown in the browser console.
+// For details see the upstream documentation:
+//   http://yuilibrary.com/yui/docs/api/classes/config.html#property_logInclude
+//   http://yuilibrary.com/yui/docs/api/classes/config.html#property_logExclude
+{{ (moodle_cfg_yuiloginclude is not defined) | ternary('//', '  ') }} $CFG->yuiloginclude = {{ moodle_cfg_yuiloginclude | default("['moodle-course-categoryexpander' => true]") }};
+{{ (moodle_cfg_yuilogexclude is not defined) | ternary('//', '  ') }} $CFG->yuilogexclude = {{ moodle_cfg_yuilogexclude | default("['moodle-core-notification' => true]") }};
+//
+// Set the minimum log level for YUI logging statements.
+// For details see the upstream documentation:
+//   http://yuilibrary.com/yui/docs/api/classes/config.html#property_logLevel
+{{ (moodle_cfg_yuiloglevel is not defined) | ternary('//', '  ') }} $CFG->yuiloglevel = {{ moodle_cfg_yuiloglevel | default("'debug'") }};
+//
+// Prevent core_string_manager application caching
+{{ (moodle_cfg_langstringcache is not defined) | ternary('//', '  ') }} $CFG->langstringcache = {{ moodle_cfg_langstringcache | default(false) }}; // NOT FOR PRODUCTION SERVERS!
+//
+// When working with production data on test servers, no emails or other messages
+// should ever be send to real users
+{{ (moodle_cfg_noemailever is not defined) | ternary('//', '  ') }} $CFG->noemailever = {{ moodle_cfg_noemailever | default(true) }};    // NOT FOR PRODUCTION SERVERS!
+//
+// Divert all outgoing emails to this address to test and debug emailing features
+{{ (moodle_cfg_divertallemailsto is not defined) | ternary('//', '  ') }} $CFG->divertallemailsto = {{ moodle_cfg_divertallemailsto | default("'root@localhost.local'") }}; // NOT FOR PRODUCTION SERVERS!
+//
+// Except for certain email addresses you want to let through for testing. Accepts
+// a comma separated list of regexes.
+{{ (moodle_cfg_divertallemailsexcept is not defined) | ternary('//', '  ') }} $CFG->divertallemailsexcept = {{ moodle_cfg_divertallemailsexcept | default("'tester@dev.com, fred(\+.*)?@example.com'") }}; // NOT FOR PRODUCTION SERVERS!
+//
+// Uncomment if you want to allow empty comments when modifying install.xml files.
+{{ (moodle_cfg_xmldbdisablecommentchecking is not defined) | ternary('//', '  ') }} $CFG->xmldbdisablecommentchecking = {{ moodle_cfg_xmldbdisablecommentchecking | default(true) }};    // NOT FOR PRODUCTION SERVERS!
+//
+// Since 2.0 sql queries are not shown during upgrade by default.
+// Please note that this setting may produce very long upgrade page on large sites.
+{{ (moodle_cfg_upgradeshowsql is not defined) | ternary('//', '  ') }} $CFG->upgradeshowsql = {{ moodle_cfg_upgradeshowsql | default(true) }}; // NOT FOR PRODUCTION SERVERS!
+//
+// Add SQL queries to the output of cron, just before their execution
+{{ (moodle_cfg_showcronsql is not defined) | ternary('//', '  ') }} $CFG->showcronsql = {{ moodle_cfg_showcronsql | default(true) }};
+//
+// Force developer level debug and add debug info to the output of cron
+{{ (moodle_cfg_showcrondebugging is not defined) | ternary('//', '  ') }} $CFG->showcrondebugging = {{ moodle_cfg_showcrondebugging | default(true) }};
+//
+// Force result of checks used to determine whether a site is considered "public" or not (such as for site registration).
+{{ (moodle_cfg_site_is_public is not defined) | ternary('//', '  ') }} $CFG->site_is_public = {{ moodle_cfg_site_is_public | default(false) }};
+//
+//=========================================================================
+// 8. FORCED SETTINGS
+//=========================================================================
+// It is possible to specify normal admin settings here, the point is that
+// they can not be changed through the standard admin settings pages any more.
+//
+// Core settings are specified directly via assignment to $CFG variable.
+// Example:
+//   $CFG->somecoresetting = 'value';
+//
+{% for forcedsetting, forcedvalue in moodle_cfg_forcedsettings.items() %}
+$CFG->{{ forcedsetting }} = '{{ forcedvalue }}';
+{% endfor %}
+// Plugin settings have to be put into a special array.
+// Example:
+//   $CFG->forced_plugin_settings = array('pluginname'  => array('settingname' => 'value', 'secondsetting' => 'othervalue'),
+//                                        'otherplugin' => array('mysetting' => 'myvalue', 'thesetting' => 'thevalue'));
+// Module default settings with advanced/locked checkboxes can be set too. To do this, add
+// an extra config with '_adv' or '_locked' as a suffix and set the value to true or false.
+// Example:
+//   $CFG->forced_plugin_settings = array('pluginname'  => array('settingname' => 'value', 'settingname_locked' => true, 'settingname_adv' => true));
+//
+//=========================================================================
+// 9. PHPUNIT SUPPORT
+//=========================================================================
+{{ (moodle_cfg_phpunit_prefix is not defined) | ternary('//', '  ') }} $CFG->phpunit_prefix = {{ moodle_cfg_phpunit_prefix | default("'phpu_'") }};
+{{ (moodle_cfg_phpunit_dataroot is not defined) | ternary('//', '  ') }} $CFG->phpunit_dataroot = {{ moodle_cfg_phpunit_dataroot | default("'/home/example/phpu_moodledata'") }};
+{{ (moodle_cfg_phpunit_directorypermissions is not defined) | ternary('//', '  ') }} $CFG->phpunit_directorypermissions = {{ moodle_cfg_phpunit_directorypermissions | default('02777') }}; // optional
+{{ (moodle_cfg_phpunit_profilingenabled is not defined) | ternary('//', '  ') }} $CFG->phpunit_profilingenabled = {{ moodle_cfg_phpunit_profilingenabled | default(true) }}; // optional to profile PHPUnit runs.
+//
+//=========================================================================
+// 10. SECRET PASSWORD SALT
+//=========================================================================
+// A site-wide password salt is no longer used in new installations.
+// If upgrading from 2.6 or older, keep all existing salts in config.php file.
+//
+// $CFG->passwordsaltmain = 'a_very_long_random_string_of_characters#@6&*1';
+//
+// You may also have some alternative salts to allow migration from previously
+// used salts.
+//
+// $CFG->passwordsaltalt1 = '';
+// $CFG->passwordsaltalt2 = '';
+// $CFG->passwordsaltalt3 = '';
+// ....
+// $CFG->passwordsaltalt19 = '';
+// $CFG->passwordsaltalt20 = '';
+//
+//
+//=========================================================================
+// 11. BEHAT SUPPORT
+//=========================================================================
+// Behat test site needs a unique www root, data directory and database prefix:
+//
+{{ (moodle_cfg_behat_wwwroot is not defined) | ternary('//', '  ') }} $CFG->behat_wwwroot = {{ moodle_cfg_behat_wwwroot | default("'http://127.0.0.1/moodle'") }};
+{{ (moodle_cfg_behat_prefix is not defined) | ternary('//', '  ') }} $CFG->behat_prefix = {{ moodle_cfg_behat_prefix | default("'bht_'") }};
+{{ (moodle_cfg_behat_dataroot is not defined) | ternary('//', '  ') }} $CFG->behat_dataroot = {{ moodle_cfg_behat_dataroot | default("'/home/example/bht_moodledata'") }};
+{{ (moodle_cfg_behat_dbname is not defined) | ternary('//', '  ') }} $CFG->behat_dbname = {{ moodle_cfg_behat_dbname | default("'behat'") }}; // optional
+{{ (moodle_cfg_behat_dbuser is not defined) | ternary('//', '  ') }} $CFG->behat_dbuser = {{ moodle_cfg_behat_dbuser | default("'username'") }}; // optional
+{{ (moodle_cfg_behat_dbpass is not defined) | ternary('//', '  ') }} $CFG->behat_dbpass = {{ moodle_cfg_behat_dbpass | default("'password'") }}; // optional
+{{ (moodle_cfg_behat_dbhost is not defined) | ternary('//', '  ') }} $CFG->behat_dbhost = {{ moodle_cfg_behat_dbhost | default("'localhost'") }}; // optional
+//
+// You can override default Moodle configuration for Behat and add your own
+// params; here you can add more profiles, use different Mink drivers than Selenium...
+// These params would be merged with the default Moodle behat.yml, giving priority
+// to the ones specified here. The array format is YAML, following the Behat
+// params hierarchy. More info: http://docs.behat.org/guides/7.config.html
+// Example:
+//   $CFG->behat_config = array(
+//       'Mac-Firefox' => array(
+//           'suites' => array (
+//               'default' => array(
+//                   'filters' => array(
+//                      'tags' => '~@_file_upload'
+//                   ),
+//               ),
+//           ),
+//           'extensions' => array(
+//               'Behat\MinkExtension' => array(
+//                   'webddriver' => array(
+//                       'browser' => 'firefox',
+//                       'capabilities' => array(
+//                           'platform' => 'OS X 10.6',
+//                           'version' => 20
+//                       )
+//                   )
+//               )
+//           )
+//       ),
+//       'Mac-Safari' => array(
+//           'extensions' => array(
+//               'Behat\MinkExtension' => array(
+//                   'webddriver' => array(
+//                       'browser' => 'safari',
+//                       'capabilities' => array(
+//                           'platform' => 'OS X 10.8',
+//                           'version' => 6
+//                       )
+//                   )
+//               )
+//           )
+//       )
+//   );
+//
+{{ (moodle_cfg_behat_config is not defined) | ternary('//', '  ') }}   $CFG->behat_config = {{ moodle_cfg_behat_config | default("[]") }};
+//
+// You can also use the following config to override default Moodle configuration for Behat.
+// This config is limited to default suite and will be supported in later versions.
+// It will have precedence over $CFG->behat_config.
+// $CFG->behat_profiles = array(
+//     'phantomjs' => array(
+//         'browser' => 'phantomjs',
+//         'tags' => '~@_file_upload&&~@_alert&&~@_bug_phantomjs',
+//         'wd_host' => 'http://127.0.0.1:4443/wd/hub',
+//         'capabilities' => array(
+//             'platform' => 'Linux',
+//             'version' => 2.1
+//         )
+//     ),
+// );
+//
+{{ (moodle_cfg_behat_profiles is not defined) | ternary('//', '  ') }} $CFG->behat_profiles = {{ moodle_cfg_behat_profiles | default("[]") }};
+//
+// All this page's extra Moodle settings are compared against a white list of allowed settings
+// (the basic and behat_* ones) to avoid problems with production environments. This setting can be
+// used to expand the default white list with an array of extra settings.
+// Example:
+{{ (moodle_cfg_behat_extraallowedsettings is not defined) | ternary('//', '  ') }}   $CFG->behat_extraallowedsettings = {{ moodle_cfg_behat_extraallowedsettings | default("['somecoresetting', '...']") }};
+//
+// You should explicitly allow the usage of the deprecated behat steps, otherwise an exception will
+// be thrown when using them. The setting is disabled by default.
+// Example:
+{{ (moodle_cfg_behat_usedeprecated is not defined) | ternary('//', '  ') }}   $CFG->behat_usedeprecated = {{ moodle_cfg_behat_usedeprecated | default(true) }};
+//
+// If you are using a slow machine, it may help to increase the timeouts that Behat uses. The
+// following example will increase timeouts by a factor of 3 (using 30 seconds instead of 10
+// seconds, for instance).
+// Example:
+{{ (moodle_cfg_behat_increasetimeout is not defined) | ternary('//', '  ') }}   $CFG->behat_increasetimeout = {{ moodle_cfg_behat_increasetimeout | default(3) }};
+//
+// Yon can specify a window size modifier for Behat, which is applied to any window szie changes.
+// For example, if a window size of 640x768 is specified, with a modifier of 2, then the final size is 1280x1536.
+// This is particularly useful for behat reruns to eliminate issues with window sizing.
+// Example:
+{{ (moodle_cfg_behat_window_size_modifier is not defined) | ternary('//', '  ') }}   $CFG->behat_window_size_modifier = {{ moodle_cfg_behat_window_size_modifier | default(1) }};
+//
+// Including feature files from directories outside the dirroot is possible if required. The setting
+// requires that the running user has executable permissions on all parent directories in the paths.
+// Example:
+{{ (moodle_cfg_behat_additionalfeatures is not defined) | ternary('//', '  ') }}   $CFG->behat_additionalfeatures = {{ moodle_cfg_behat_additionalfeatures | default("['/home/developer/code/wipfeatures']") }};
+//
+// You can make behat save several dumps when a scenario fails. The dumps currently saved are:
+// * a dump of the DOM in it's state at the time of failure; and
+// * a screenshot (JavaScript is required for the screenshot functionality, so not all browsers support this option)
+// Example:
+{{ (moodle_cfg_behat_faildump_path is not defined) | ternary('//', '  ') }}   $CFG->behat_faildump_path = {{ moodle_cfg_behat_faildump_path | default("'/my/path/to/save/failure/dumps'") }};
+//
+// You can make behat pause upon failure to help you diagnose and debug problems with your tests.
+//
+{{ (moodle_cfg_behat_pause_on_fail is not defined) | ternary('//', '  ') }}   $CFG->behat_pause_on_fail = {{ moodle_cfg_behat_pause_on_fail | default(true) }};
+//
+// You can specify db, selenium wd_host etc. for behat parallel run by setting following variable.
+// Example:
+//   $CFG->behat_parallel_run = array (
+//       array (
+//           'dbtype' => 'mysqli',
+//           'dblibrary' => 'native',
+//           'dbhost' => 'localhost',
+//           'dbname' => 'moodletest',
+//           'dbuser' => 'moodle',
+//           'dbpass' => 'moodle',
+//           'behat_prefix' => 'mdl_',
+//           'wd_host' => 'http://127.0.0.1:4444/wd/hub',
+//           'behat_wwwroot' => 'http://127.0.0.1/moodle',
+//           'behat_dataroot' => '/home/example/bht_moodledata'
+//       ),
+//   );
+//
+{{ (moodle_cfg_behat_parallel_run is not defined) | ternary('//', '  ') }}   $CFG->behat_parallel_run = {{ moodle_cfg_behat_parallel_run | default("[]") }};
+//
+// To change name of behat parallel run site, define BEHAT_PARALLEL_SITE_NAME and parallel run sites will be suffixed
+// with this value
+// Example:
+//   define('BEHAT_PARALLEL_SITE_NAME', 'behatparallelsite');
+//
+// Command line output for parallel behat install is limited to 80 chars, if you are installing more then 4 sites and
+// want to expand output to more then 80 chars, then define BEHAT_MAX_CMD_LINE_OUTPUT
+// Example:
+//   define('BEHAT_MAX_CMD_LINE_OUTPUT', 120);
+//
+// Behat feature files will be distributed randomly between the processes by default. If you have timing file or want
+// to create timing file then define BEHAT_FEATURE_TIMING_FILE with path to timing file. It will be updated for each
+// run with latest time taken to execute feature.
+// Example:
+//   define('BEHAT_FEATURE_TIMING_FILE', '/PATH_TO_TIMING_FILE/timing.json');
+//
+// If you don't have timing file and want some stable distribution of features, then you can use step counts to
+// distribute the features. You can generate step file by executing php admin/tool/behat/cli/util.php --updatesteps
+// this will update step file which is defined by BEHAT_FEATURE_STEP_FILE.
+// Example:
+//   define('BEHAT_FEATURE_STEP_FILE', '/PATH_TO_FEATURE_STEP_COUNT_FILE/stepcount.json');
+//
+// Feature distribution for each process is displayed as histogram. you can disable it by setting
+// BEHAT_DISABLE_HISTOGRAM
+// Example:
+//   define('BEHAT_DISABLE_HISTOGRAM', true);
+//
+// Mobile app Behat testing requires this option, pointing to the url where the Ionic application is served:
+{{ (moodle_cfg_behat_ionic_wwwroot is not defined) | ternary('//', '  ') }}   $CFG->behat_ionic_wwwroot = {{ moodle_cfg_behat_ionic_wwwroot | default("'http://localhost:8100'") }};
+//
+//=========================================================================
+// 12. DEVELOPER DATA GENERATOR
+//=========================================================================
+//
+// The developer data generator tool is intended to be used only in development or testing sites and
+// it's usage in production environments is not recommended; if it is used to create JMeter test plans
+// is even less recommended as JMeter needs to log in as site course users. JMeter needs to know the
+// users passwords but would be dangerous to have a default password as everybody would know it, which would
+// be specially dangerouse if somebody uses this tool in a production site, so in order to prevent unintended
+// uses of the tool and undesired accesses as well, is compulsory to set a password for the users
+// generated by this tool, but only in case you want to generate a JMeter test. The value should be a string.
+// Example:
+{{ (moodle_cfg_tool_generator_users_password is not defined) | ternary('//', '  ') }}   $CFG->tool_generator_users_password = {{ moodle_cfg_tool_generator_users_password | default("'examplepassword'") }};
+//
+//=========================================================================
+// 13. SYSTEM PATHS (You need to set following, depending on your system)
+//=========================================================================
+// Ghostscript path.
+// On most Linux installs, this can be left as '/usr/bin/gs'.
+// On Windows it will be something like 'c:\gs\bin\gswin32c.exe' (make sure
+// there are no spaces in the path - if necessary copy the files 'gswin32c.exe'
+// and 'gsdll32.dll' to a new folder without a space in the path)
+{{ (moodle_cfg_pathtogs is not defined) | ternary('//', '  ') }}      $CFG->pathtogs = {{ moodle_cfg_pathtogs | default("'/usr/bin/gs'") }};
+//
+// Path to PHP CLI.
+// Probably something like /usr/bin/php. If you enter this, cron scripts can be
+// executed from admin web interface.
+{{ (moodle_cfg_pathtophp is not defined) | ternary('//', '  ') }} $CFG->pathtophp = {{ moodle_cfg_pathtophp | default("''") }};
+//
+// Path to du.
+// Probably something like /usr/bin/du. If you enter this, pages that display
+// directory contents will run much faster for directories with a lot of files.
+{{ (moodle_cfg_pathtodu is not defined) | ternary('//', '  ') }}      $CFG->pathtodu = {{ moodle_cfg_pathtodu | default("''") }};
+//
+// Path to aspell.
+// To use spell-checking within the editor, you MUST have aspell 0.50 or later
+// installed on your server, and you must specify the correct path to access the
+// aspell binary. On Unix/Linux systems, this path is usually /usr/bin/aspell,
+// but it might be something else.
+{{ (moodle_cfg_aspellpath is not defined) | ternary('//', '  ') }}      $CFG->aspellpath = {{ moodle_cfg_aspellpath | default("''") }};
+//
+// Path to dot.
+// Probably something like /usr/bin/dot. To be able to generate graphics from
+// DOT files, you must have installed the dot executable and point to it here.
+// Note that, for now, this only used by the profiling features
+// (Development->Profiling) built into Moodle.
+{{ (moodle_cfg_pathtodot is not defined) | ternary('//', '  ') }}      $CFG->pathtodot = {{ moodle_cfg_pathtodot | default("''") }};
+//
+// Path to unoconv.
+// Probably something like /usr/bin/unoconv. Used as a fallback to convert between document formats.
+// Unoconv is used convert between file formats supported by LibreOffice.
+// Use a recent version of unoconv ( >= 0.7 ), older versions have trouble running from a webserver.
+{{ (moodle_cfg_pathtounoconv is not defined) | ternary('//', '  ') }}      $CFG->pathtounoconv = {{ moodle_cfg_pathtounoconv | default("''") }};
+//
+//=========================================================================
+// 14. ALTERNATIVE FILE SYSTEM SETTINGS
+//=========================================================================
+//
+// Alternative file system.
+// Since 3.3 it is possible to override file_storage and file_system API and use alternative storage systems (e.g. S3,
+// Rackspace Cloud Files, Google Cloud Storage, Azure Storage, etc.).
+// To set the alternative file storage system in config.php you can use the following setting, providing the
+// alternative system class name that will be auto-loaded by file_storage API.
+//
+{{ (moodle_cfg_alternative_file_system_class is not defined) | ternary('//', '  ') }}      $CFG->alternative_file_system_class = {{ moodle_cfg_alternative_file_system_class | default("'\local_myfilestorage\file_system'") }};
+//
+//=========================================================================
+// 15. CAMPAIGN CONTENT
+//=========================================================================
+//
+// We have added a campaign content to the notifications page, in case you want to hide that from your site you just
+// need to set showcampaigncontent setting to false.
+//
+{{ (moodle_cfg_showcampaigncontent is not defined) | ternary('//', '  ') }}      $CFG->showcampaigncontent = {{ moodle_cfg_showcampaigncontent | default(true) }};
+//
+//=========================================================================
+// 16. ALTERNATIVE CACHE CONFIG SETTINGS
+//=========================================================================
+//
+// Alternative cache config.
+// Since 3.10 it is possible to override the cache_factory class with an alternative caching factory.
+// This overridden factory can provide alternative classes for caching such as cache_config,
+// cache_config_writer and core_cache\local\administration_display_helper.
+// The autoloaded factory class name can be specified to use.
+//
+{{ (moodle_cfg_alternative_cache_factory_class is not defined) | ternary('//', '  ') }}      $CFG->alternative_cache_factory_class = {{ moodle_cfg_alternative_cache_factory_class | default("'tool_alternativecache_cache_factory'") }};
+//
+//=========================================================================
+// 17. SCHEDULED TASK OVERRIDES
+//=========================================================================
+//
+// It is now possible to define scheduled tasks directly within config.
+// The overridden value will take precedence over the values that have been set VIA the UI from the
+// next time the task is run.
+//
+// Tasks are configured as an array of tasks that can override a task's schedule, as well as setting
+// the task as disabled. I.e:
+//
+//      $CFG->scheduled_tasks = [
+//          '\local_plugin\task\my_task' => [
+//              'schedule' => '*/15 0 0 0 0',
+//              'disabled' => 0,
+//          ],
+//      ];
+//
+// The format for the schedule definition is: '{minute} {hour} {day} {month} {dayofweek}'.
+//
+// The classname of the task also supports wildcards:
+//
+//      $CFG->scheduled_tasks = [
+//          '\local_plugin\*' => [
+//              'schedule' => '*/15 0 0 0 0',
+//              'disabled' => 0,
+//          ],
+//          '*' => [
+//              'schedule' => '0 0 0 0 0',
+//              'disabled' => 0,
+//          ],
+//      ];
+//
+// In this example, any task classnames matching '\local_plugin\*' would match the first rule and
+// use that schedule the next time the task runs. Note that even though the 'local_plugin' tasks match
+// the second rule as well, the highest rule takes precedence. Therefore, the second rule would be
+// applied to all tasks, except for tasks within '\local_plugin\'.
+//
+// When the full classname is used, this rule always takes priority over any wildcard rules.
+//
+{{ (moodle_cfg_scheduled_tasks is not defined) | ternary('//', '  ') }}      $CFG->scheduled_tasks = {{ moodle_cfg_scheduled_tasks | default("[]") }};
+//
+//=========================================================================
+// 18. SITE ADMIN PRESETS
+//=========================================================================
+//
+// The site admin presets plugin has been integrated in Moodle LMS. You can use a setting in case you
+// want to apply a preset during the installation:
+//
+{{ (moodle_cfg_setsitepresetduringinstall is not defined) | ternary('//', '  ') }}      $CFG->setsitepresetduringinstall = {{ moodle_cfg_setsitepresetduringinstall | default("'starter'") }};
+//
+// This setting accepts the following values:
+// - One of the core preset names (i.e "starter" or "full").
+// - The path of a valid XML preset file, that will be imported and applied. Absolute paths are recommended, to
+//   guarantee the file is found: i.e."MOODLEPATH/admin/presets/tests/fixtures/import_settings_plugins.xml".
+//
+// This setting is only used during the installation process. So once the Moodle site is installed, it is ignored.
+//
+//=========================================================================
+// 19. SERVICES AND SUPPORT CONTENT
+//=========================================================================
+//
+// We have added services and support content to the notifications page, in case you want to hide that from your site
+// you just need to set showservicesandsupportcontent setting to false.
+//
+{{ (moodle_cfg_showservicesandsupportcontent is not defined) | ternary('//', '  ') }}      $CFG->showservicesandsupportcontent = {{ moodle_cfg_showservicesandsupportcontent | default(false) }};
+//
+//=========================================================================
+// ALL DONE!  To continue installation, visit your main page with a browser
+//=========================================================================
+
+require_once(__DIR__ . '/lib/setup.php'); // Do not edit
+
+// There is no php closing tag in this file,
+// it is intentional because it prevents trailing whitespace problems!
