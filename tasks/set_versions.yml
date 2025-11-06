@@ -1,14 +1,10 @@
 ---
 - name: Derive Moodle deploy version from moodle_version when not provided
   ansible.builtin.set_fact:
-    moodle_deploy_version: "{{
-      lookup('geoffreyvanwyk.moodle.stable_branch', moodle_version=moodle_version)
-      }}"
+    moodle_deploy_version: "{{ lookup('stable_branch', moodle_version=moodle_version) }}"
   when: moodle_deploy_version | default('') | length == 0
 
 - name: Derive PHP version from moodle_version when not provided
   ansible.builtin.set_fact:
-    php_version: "{{
-      lookup('geoffreyvanwyk.moodle.php_version', moodle_version=moodle_version)
-      }}"
+    php_version: "{{ lookup('php_version', moodle_version=moodle_version) }}"
   when: php_version is not defined

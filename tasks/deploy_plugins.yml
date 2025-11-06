@@ -54,8 +54,7 @@
     remote_src: true
     dest: "{{
       moodle_deploy_destination + '/' +
-      lookup('geoffreyvanwyk.moodle.plugin_directory',
-      frankenstyle_name=item.name)
+      lookup('plugin_directory', frankenstyle_name=item.name)
       | dirname
       }}"
   notify: Upgrade Moodle
@@ -67,7 +66,6 @@
     version: "{{ item.version }}"
     dest: "{{
       moodle_deploy_destination + '/' +
-      lookup('geoffreyvanwyk.moodle.plugin_directory',
-      frankenstyle_name=item.name)
+      lookup('plugin_directory', frankenstyle_name=item.name)
       }}"
   notify: Upgrade Moodle
