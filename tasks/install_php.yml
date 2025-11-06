@@ -1,6 +1,6 @@
 - name: Set PHP version (only if not provided)
   ansible.builtin.set_fact:
-    php_version: "{{ lookup('geoffreyvanwyk.moodle.php_version', moodle_version=moodle_version) }}"
+    php_version: "{{ lookup('php_version', moodle_version=moodle_version) }}"
   when: php_version is not defined
 
 - name: Install PHP via geerlingguy.php (modules + INI equivalents)
