@@ -36,11 +36,11 @@
   # See https://www.postgresql.org/docs/14/app-initdb.html
   when: moodle_cfg_dbtype == 'pgsql'
   vars:
-    moodle_postgresql_version: 14
+    secure_moodle_pg_version: "{{ secure_moodle_postgresql_version }}"
     moodle_postgresql_bin: >-
-      /usr/lib/postgresql/{{ moodle_postgresql_version }}/bin
+      /usr/lib/postgresql/{{ secure_moodle_pg_version }}/bin
     moodle_postgresql_lib: >-
-      /var/lib/postgresql/{{ moodle_postgresql_version }}/main
+      /var/lib/postgresql/{{ secure_moodle_pg_version }}/main
   block:
     - name: Download signing key for PostgreSQL APT package repository
       become: true
@@ -66,8 +66,8 @@
       become: true
       ansible.builtin.apt:
         package:
-          - postgresql-{{ moodle_postgresql_version }}
-          - postgresql-contrib-{{ moodle_postgresql_version }}
+          - postgresql-{{ secure_moodle_pg_version }}
+          - postgresql-contrib-{{ secure_moodle_pg_version }}
           - libpq-dev # Necessary for postgresql_* modules
           - python3-psycopg2 # Necessary for postgresql_* modules
           - acl # Necessary for initializing PostgreSQL
