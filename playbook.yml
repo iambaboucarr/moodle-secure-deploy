@@ -1,4 +1,4 @@
-- name: Secure Moodle deploy (local role)
+- name: Secure Moodle deploy
   hosts: localhost
   become: true
   vars:

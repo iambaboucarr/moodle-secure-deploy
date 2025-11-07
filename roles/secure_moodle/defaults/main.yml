@@ -161,3 +161,8 @@ moodle_plugins: []
 #       https://github.com/geoffreyvanwyk/moodle-theme_learningsandboxonline
 #     version: MOODLE_403_STABLE
 moodle_plugins_git: []
+
+# ------ Database engine versions (override if needed) {{{1
+
+# Default PostgreSQL major version to install. Moodle 5.1 supports 15+, use 16 by default.
+secure_moodle_postgresql_version: 16
