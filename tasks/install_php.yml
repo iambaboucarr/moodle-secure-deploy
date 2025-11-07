@@ -3,33 +3,73 @@
     php_version: "{{ lookup('php_version', moodle_version=moodle_version) }}"
   when: php_version is not defined
 
-- name: Install PHP via geerlingguy.php (modules + INI equivalents)
-  ansible.builtin.include_role:
-    name: geerlingguy.php
-    apply:
-      become: true
-  vars:
-    php_ppa: "ppa:ondrej/php"
-    php_enable_webserver: false
-    php_version: "{{ php_version }}" # e.g. 8.4
-    php_use_managed_ini: true
-    php_max_input_vars: 5000 # php_ini_cli + php_ini_fpm: max_input_vars
-    php_file_uploads: "On" # php_ini_fpm: file_uploads
-    php_opcache_enable: 1 # php_ini_fpm: opcache.enable
-    php_packages_extra: # php_mod_enabled mapped to Ubuntu packages
-      - "php{{ php_version }}-fpm" # fpm
+- name: Ensure required APT utilities are present
+  become: true
+  ansible.builtin.apt:
+    package:
+      - software-properties-common
+      - ca-certificates
+    state: present
+    update_cache: true
+
+- name: Add Ondrej PHP PPA (Ubuntu)
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "ppa:ondrej/php"
+    state: present
+
+- name: Update APT cache
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install PHP and extensions ({{ php_version }})
+  become: true
+  ansible.builtin.apt:
+    package:
+      - "php{{ php_version }}-fpm"
       - "php{{ php_version }}-cli"
-      - "php{{ php_version }}-curl" # curl
-      - "php{{ php_version }}-gd" # gd
-      - "php{{ php_version }}-intl" # intl
-      - "php{{ php_version }}-mbstring" # mbstring
-      - "php{{ php_version }}-xml" # dom, xml, xmlreader
-      - "php{{ php_version }}-zip" # zip
-      - "php{{ php_version }}-tidy" # tidy
-      - "php{{ php_version }}-exif" # exif
-      # Pick ONE DB driver to match your DB:
-      - "php{{ php_version }}-pgsql" # pgsql
-      # - "php{{ php_version }}-mysql"     # mysql
+      - "php{{ php_version }}-common"
+      - "php{{ php_version }}-curl"
+      - "php{{ php_version }}-gd"
+      - "php{{ php_version }}-intl"
+      - "php{{ php_version }}-mbstring"
+      - "php{{ php_version }}-xml"
+      - "php{{ php_version }}-zip"
+      - "php{{ php_version }}-tidy"
+      - "php{{ php_version }}-exif"
+      - "php{{ php_version }}-pgsql"
+      # - "php{{ php_version }}-mysql"
+    state: present
+
+- name: Configure PHP INI (CLI + FPM) max_input_vars
+  become: true
+  vars:
+    php_ini_targets:
+      - "/etc/php/{{ php_version }}/cli/php.ini"
+      - "/etc/php/{{ php_version }}/fpm/php.ini"
+  loop: "{{ php_ini_targets }}"
+  loop_control:
+    loop_var: php_ini_file
+  ansible.builtin.lineinfile:
+    path: "{{ php_ini_file }}"
+    regexp: '^;?\s*max_input_vars\s*='
+    line: "max_input_vars = 5000"
+    backrefs: true
+
+- name: Configure PHP INI (FPM) file_uploads and opcache.enable
+  become: true
+  loop:
+    - { key: "file_uploads", value: "On" }
+    - { key: "opcache.enable", value: "1" }
+  loop_control:
+    loop_var: ini_kv
+  ansible.builtin.lineinfile:
+    path: "/etc/php/{{ php_version }}/fpm/php.ini"
+    regexp: "^;?\\s*{{ ini_kv.key | regex_escape }}\\s*="
+    line: "{{ ini_kv.key }} = {{ ini_kv.value }}"
+    backrefs: true
 
 - name: Start PHP service
   become: true
