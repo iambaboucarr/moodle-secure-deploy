@@ -70,7 +70,7 @@
 - name: Deploy Moodle source code
   ansible.builtin.git:
     repo: "{{ moodle_deploy_repository }}"
-    version: "{{ moodle_deploy_version | default(secure_moodle_moodle_deploy_version) }}"
+    version: "{{ moodle_deploy_version | default(secure_moodle_moodle_deploy_version, true) }}"
     dest: "{{ moodle_deploy_destination }}"
     umask: "0002"
     update: "{{ moodle_deploy_update }}"
