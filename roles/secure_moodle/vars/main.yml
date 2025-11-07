@@ -144,4 +144,4 @@ moodle_cfg_dataroot: "{{ '/var/www/moodledata-' + moodle_instance }}"
 
 # File system permissions that must be applied to new directories created
 # within the moodledata directorry.
-moodle_cfg_directorypermissions: "02777"
+moodle_cfg_directorypermissions: "02770"

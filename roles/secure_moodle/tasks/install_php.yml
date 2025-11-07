@@ -1,0 +1,93 @@
+- name: Set PHP version (only if not provided)
+  ansible.builtin.set_fact:
+    secure_moodle_php_version: "{{ lookup('php_version', moodle_version=moodle_version) }}"
+  when: php_version is not defined and secure_moodle_php_version is not defined
+  tags:
+    - skip_ansible_lint
+
+- name: Ensure required APT utilities are present
+  become: true
+  ansible.builtin.apt:
+    package:
+      - software-properties-common
+      - ca-certificates
+    state: present
+    update_cache: true
+
+- name: Add Ondrej PHP PPA (Ubuntu)
+  become: true
+  ansible.builtin.apt_repository:
+    repo: "ppa:ondrej/php"
+    state: present
+
+- name: Update APT cache
+  become: true
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install PHP and extensions
+  become: true
+  ansible.builtin.apt:
+    package:
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-fpm"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-cli"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-common"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-curl"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-gd"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-intl"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-mbstring"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-xml"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-zip"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-tidy"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-exif"
+      - "php{{ (php_version | default(secure_moodle_php_version)) }}-pgsql"
+      # - "php{{ php_version }}-mysql"
+    state: present
+
+- name: Configure PHP INI (CLI + FPM) max_input_vars
+  become: true
+  vars:
+    php_ini_targets:
+      - "/etc/php/{{ (php_version | default(secure_moodle_php_version)) }}/cli/php.ini"
+      - "/etc/php/{{ (php_version | default(secure_moodle_php_version)) }}/fpm/php.ini"
+  loop: "{{ php_ini_targets }}"
+  loop_control:
+    loop_var: php_ini_file
+  ansible.builtin.lineinfile:
+    path: "{{ php_ini_file }}"
+    regexp: '^;?\s*max_input_vars\s*='
+    line: "max_input_vars = 5000"
+    backrefs: true
+
+- name: Configure PHP INI (FPM) file_uploads and opcache.enable
+  become: true
+  loop:
+    - { key: "file_uploads", value: "On" }
+    - { key: "opcache.enable", value: "1" }
+    - { key: "expose_php", value: "Off" }
+    - { key: "session.cookie_httponly", value: "1" }
+    - { key: "session.cookie_samesite", value: "Lax" }
+  loop_control:
+    loop_var: ini_kv
+  ansible.builtin.lineinfile:
+    path: "/etc/php/{{ (php_version | default(secure_moodle_php_version)) }}/fpm/php.ini"
+    regexp: "^;?\\s*{{ ini_kv.key | regex_escape }}\\s*="
+    line: "{{ ini_kv.key }} = {{ ini_kv.value }}"
+    backrefs: true
+
+- name: Configure PHP INI (FPM) cookie_secure when https
+  when: moodle_web_protocol == 'https'
+  become: true
+  ansible.builtin.lineinfile:
+    path: "/etc/php/{{ (php_version | default(secure_moodle_php_version)) }}/fpm/php.ini"
+    regexp: '^;?\s*session.cookie_secure\s*='
+    line: 'session.cookie_secure = 1'
+    backrefs: true
+
+- name: Start PHP service
+  become: true
+  ansible.builtin.sysvinit:
+    name: "php{{ (php_version | default(secure_moodle_php_version)) }}-fpm"
+    state: started
+    enabled: true

@@ -87,11 +87,11 @@
         - name: Check if PostgreSQL role exists
           ansible.builtin.command:
             cmd: 'psql -tAc "SELECT 1 FROM pg_roles WHERE rolname=''{{ moodle_cfg_dbuser }}''"'
-          register: pg_role_exists
+          register: secure_moodle_pg_role_exists
           changed_when: false
 
         - name: Create PostgreSQL role (if missing)
-          when: pg_role_exists.stdout.strip() != '1'
+          when: secure_moodle_pg_role_exists.stdout.strip() != '1'
           ansible.builtin.command:
             cmd: 'psql -c "CREATE USER {{ moodle_cfg_dbuser }} WITH PASSWORD ''{{ moodle_cfg_dbpass }}'';"'
           changed_when: true
@@ -103,11 +103,11 @@
         - name: Check if PostgreSQL database exists
           ansible.builtin.command:
             cmd: 'psql -tAc "SELECT 1 FROM pg_database WHERE datname=''{{ moodle_cfg_dbname }}''"'
-          register: pg_db_exists
+          register: secure_moodle_pg_db_exists
           changed_when: false
 
         - name: Create PostgreSQL database (if missing)
-          when: pg_db_exists.stdout.strip() != '1'
+          when: secure_moodle_pg_db_exists.stdout.strip() != '1'
           ansible.builtin.command:
             cmd: "createdb -O {{ moodle_cfg_dbuser }} {{ moodle_cfg_dbname }}"
           changed_when: true

@@ -30,12 +30,13 @@
   when: moodle_web_service == 'apache2'
   become: true
   loop:
+    - headers
     - rewrite
     - proxy
     - proxy_fcgi
     - ssl
   ansible.builtin.command:
     cmd: "a2enmod {{ item }}"
-  register: a2enmod_result
-  changed_when: a2enmod_result.stdout is defined and (a2enmod_result.stdout | lower) is search('enabling')
+  register: secure_moodle_a2enmod_result
+  changed_when: secure_moodle_a2enmod_result.stdout is defined and (secure_moodle_a2enmod_result.stdout | lower) is search('enabling')
   notify: Restart Apache web service

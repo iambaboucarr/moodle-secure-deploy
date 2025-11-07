@@ -1,9 +1,8 @@
-- name: Secure Moodle deploy (local tasks)
+- name: Secure Moodle deploy (local role)
   hosts: localhost
   become: true
   vars:
     ansible_user: "{{ lookup('env','USER') }}"
     moodle_version: "5.1"
-  tasks:
-    - name: Run local secure Moodle deployment tasks
-      ansible.builtin.import_tasks: tasks/main.yml
+  roles:
+    - secure_moodle

@@ -8,6 +8,17 @@
     SSLEngine On
     SSLCertificateFile {{ moodle_web_certificatefile }}
     SSLCertificateKeyFile {{ moodle_web_certificatekeyfile }}
+    SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
+    SSLHonorCipherOrder on
+    # Reasonable modern default; keep in sync with distro guidance
+    SSLCipherSuite HIGH:!aNULL:!MD5:!3DES
+    # Enable OCSP stapling when available
+    SSLUseStapling On
+    SSLStaplingCache shmcb:/var/run/ocsp(128000)
+  </IfModule>
+
+  <IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
   </IfModule>
 
   ErrorLog ${APACHE_LOG_DIR}/{{ moodle_web_domain }}-error.log

@@ -28,13 +28,16 @@
     state: directory
     owner: www-data
     group: www-data
-    mode: ugo=rwX
+    mode: u=rwx,g=rwx,o=
 
 - name: Create Moodle's configuration script
+  become: true
   ansible.builtin.template:
     src: moodle.config.php.j2
     dest: "{{ moodle_deploy_destination }}/config.php"
-    mode: u=rw,g=r,o=r
+    owner: root
+    group: www-data
+    mode: "0640"
   tags:
     # Task cannot be idempotent because of permissions set during deployment.
     - molecule-idempotence-notest
@@ -44,24 +47,24 @@
     - name: Check Moodle database schema
       ansible.builtin.command:
         chdir: "{{ moodle_deploy_destination }}"
-        cmd: php{{ php_version }} admin/cli/check_database_schema.php
+        cmd: php{{ (php_version | default(secure_moodle_php_version)) }} admin/cli/check_database_schema.php
       changed_when: false
       ignore_errors: true
-      register: moodle_check_database_schema
+      register: secure_moodle_check_database_schema
 
     - name: Establish fact of whether Moodle is installed or not
       ansible.builtin.set_fact:
-        moodle_is_installed: "{{
-          not moodle_check_database_schema.stdout
+        secure_moodle_is_installed: "{{
+          not secure_moodle_check_database_schema.stdout
           is
           search('Database is not yet installed')
           }}"
 
 - name: Install Moodle database
-  when: not moodle_is_installed
+  when: not secure_moodle_is_installed
   vars:
     command_args:
-      - php{{ php_version }}
+      - php{{ (php_version | default(secure_moodle_php_version)) }}
       - admin/cli/install_database.php
       - --agree-license
       - --fullname={{ moodle_site_fullname }}
@@ -91,10 +94,11 @@
   ansible.builtin.cron:
     name: "{{ 'Moodle scheduled tasks for ' + moodle_instance }}"
     job: >-
-      php{{ php_version }}
+      mkdir -p /var/log/moodle &&
+      chmod 0750 /var/log/moodle &&
+      php{{ (php_version | default(secure_moodle_php_version)) }}
       {{ moodle_deploy_destination }}/admin/cli/cron.php
-      >
-      /tmp/cron-{{ moodle_instance }}.log
+      >> /var/log/moodle/{{ moodle_instance }}.log 2>&1
     minute: "*"
   notify: Restart cron service
 
