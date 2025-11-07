@@ -1,30 +1,9 @@
-- hosts: localhost
+- name: Secure Moodle deploy (local tasks)
+  hosts: localhost
   become: true
   vars:
     ansible_user: "{{ lookup('env','USER') }}"
     moodle_version: "5.1"
-    php_version: "8.4"
-  roles:
-    - role: geerlingguy.php
-      vars:
-        php_ppa: "ppa:ondrej/php"
-        php_enable_webserver: false
-        php_use_managed_ini: true
-        php_max_input_vars: 5000
-        php_file_uploads: "On"
-        php_opcache_enable: 1
-        php_packages_extra:
-          - "php{{ php_version }}-fpm"
-          - "php{{ php_version }}-cli"
-          - "php{{ php_version }}-curl"
-          - "php{{ php_version }}-gd"
-          - "php{{ php_version }}-intl"
-          - "php{{ php_version }}-mbstring"
-          - "php{{ php_version }}-xml"
-          - "php{{ php_version }}-zip"
-          - "php{{ php_version }}-tidy"
-          - "php{{ php_version }}-exif"
-          - "php{{ php_version }}-pgsql" # or -mysql
-    - role: geoffreyvanwyk.moodle
-      vars:
-        php_version: "{{ php_version }}"
+  tasks:
+    - name: Run local secure Moodle deployment tasks
+      ansible.builtin.import_tasks: tasks/main.yml

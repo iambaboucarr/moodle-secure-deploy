@@ -83,18 +83,34 @@
     - name: Create database user
       become: true
       become_user: postgres
-      community.postgresql.postgresql_user:
-        name: "{{ moodle_cfg_dbuser }}"
-        password: "{{ moodle_cfg_dbpass }}"
-        state: present
+      block:
+        - name: Check if PostgreSQL role exists
+          ansible.builtin.command:
+            cmd: 'psql -tAc "SELECT 1 FROM pg_roles WHERE rolname=''{{ moodle_cfg_dbuser }}''"'
+          register: pg_role_exists
+          changed_when: false
+
+        - name: Create PostgreSQL role (if missing)
+          when: pg_role_exists.stdout.strip() != '1'
+          ansible.builtin.command:
+            cmd: 'psql -c "CREATE USER {{ moodle_cfg_dbuser }} WITH PASSWORD ''{{ moodle_cfg_dbpass }}'';"'
+          changed_when: true
 
     - name: Create database
       become: true
       become_user: postgres
-      community.postgresql.postgresql_db:
-        name: "{{ moodle_cfg_dbname }}"
-        state: present
-        owner: "{{ moodle_cfg_dbuser }}"
+      block:
+        - name: Check if PostgreSQL database exists
+          ansible.builtin.command:
+            cmd: 'psql -tAc "SELECT 1 FROM pg_database WHERE datname=''{{ moodle_cfg_dbname }}''"'
+          register: pg_db_exists
+          changed_when: false
+
+        - name: Create PostgreSQL database (if missing)
+          when: pg_db_exists.stdout.strip() != '1'
+          ansible.builtin.command:
+            cmd: "createdb -O {{ moodle_cfg_dbuser }} {{ moodle_cfg_dbname }}"
+          changed_when: true
 
 - name: Database Service - MariaDB
   # See http://tinyurl.com/mariadb-10-6-download
@@ -140,18 +156,41 @@
         state: started
         enabled: true
 
-    - name: Create database
+    - name: Create MariaDB database (idempotent)
       become: true
-      community.mysql.mysql_db:
-        login_unix_socket: /run/mysqld/mysqld.sock
-        name: "{{ moodle_cfg_dbname }}"
-        state: present
+      ansible.builtin.command:
+        argv:
+          - mysql
+          - --protocol=socket
+          - --socket=/run/mysqld/mysqld.sock
+          - -e
+          - "CREATE DATABASE IF NOT EXISTS `{{ moodle_cfg_dbname }}`;"
+      changed_when: false
 
-    - name: Create database user
+    # yamllint disable rule:line-length
+    - name: Create MariaDB user (idempotent)
       become: true
-      community.mysql.mysql_user:
-        login_unix_socket: /run/mysqld/mysqld.sock
-        name: "{{ moodle_cfg_dbuser }}"
-        password: "{{ moodle_cfg_dbpass }}"
-        priv: "{{ moodle_cfg_dbname }}.*:ALL"
-        state: present
+      ansible.builtin.command:
+        argv:
+          - mysql
+          - --protocol=socket
+          - --socket=/run/mysqld/mysqld.sock
+          - -e
+          - >-
+            CREATE USER IF NOT EXISTS '{{ moodle_cfg_dbuser }}'@'localhost'
+            IDENTIFIED BY '{{ moodle_cfg_dbpass }}';
+      changed_when: false
+
+    - name: Grant MariaDB privileges (idempotent)
+      become: true
+      ansible.builtin.command:
+        argv:
+          - mysql
+          - --protocol=socket
+          - --socket=/run/mysqld/mysqld.sock
+          - -e
+          - >-
+            GRANT ALL PRIVILEGES ON `{{ moodle_cfg_dbname }}`.* TO
+            '{{ moodle_cfg_dbuser }}'@'localhost'; FLUSH PRIVILEGES;
+      changed_when: false
+    # yamllint enable rule:line-length
