@@ -35,8 +35,20 @@
     - proxy
     - proxy_fcgi
     - ssl
+    - http2
+    - socache_shmcb
   ansible.builtin.command:
     cmd: "a2enmod {{ item }}"
   register: secure_moodle_a2enmod_result
   changed_when: secure_moodle_a2enmod_result.stdout is defined and (secure_moodle_a2enmod_result.stdout | lower) is search('enabling')
   notify: Restart Apache web service
+
+- name: Create Apache SSL session cache directory
+  when: moodle_web_service == 'apache2'
+  become: true
+  ansible.builtin.file:
+    path: /var/cache/apache2
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'

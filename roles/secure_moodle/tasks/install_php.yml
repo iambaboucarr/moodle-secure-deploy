@@ -87,7 +87,7 @@
 
 - name: Start PHP service
   become: true
-  ansible.builtin.sysvinit:
+  ansible.builtin.service:
     name: "php{{ (php_version | default(secure_moodle_php_version)) }}-fpm"
     state: started
     enabled: true
