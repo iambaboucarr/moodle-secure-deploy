@@ -1,0 +1,10 @@
+[local]
+localhost ansible_connection=local
+
+[local:vars]
+moodle_web_domain=example.com
+moodle_web_protocol=https
+moodle_web_letsencrypt=true
+moodle_env=production
+moodle_admin_email=admin@example.com
+

@@ -1,7 +1,0 @@
-[local]
-localhost ansible_connection=local ansible_become=true
-
-[local:vars]
-moodle_web_domain=moodle.example.com
-moodle_web_protocol=https
-moodle_web_letsencrypt=true
