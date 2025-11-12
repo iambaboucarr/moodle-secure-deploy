@@ -5,12 +5,29 @@
     ansible_user: "{{ lookup('env','USER') }}"
     moodle_version: "5.1"
   pre_tasks:
-    - name: Ensure password directory exists locally
+    - name: Check if password directory exists with wrong permissions
       delegate_to: localhost
       become: false
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/.ansible_passwords"
+      register: password_dir_stat
+      
+    - name: Remove password directory if it has wrong ownership
+      delegate_to: localhost
+      become: true
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/.ansible_passwords"
+        state: absent
+      when: password_dir_stat.stat.exists and password_dir_stat.stat.pw_name != 'root'
+      
+    - name: Ensure password directory exists locally
+      delegate_to: localhost
+      become: true
       ansible.builtin.file:
         path: "{{ playbook_dir }}/.ansible_passwords"
         state: directory
         mode: '0700'
+        owner: root
+        group: root
   roles:
     - secure_moodle
