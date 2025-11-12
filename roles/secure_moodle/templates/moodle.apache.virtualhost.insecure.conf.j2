@@ -1,8 +1,12 @@
 <VirtualHost *:80>
   ServerName {{ moodle_web_domain }}
 {% if moodle_web_protocol == 'https' %}
-  Redirect permanent "/" "https://{{ moodle_web_domain}}"
+  # Redirect all HTTP traffic to HTTPS
+  RewriteEngine On
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://{{ moodle_web_domain }}$1 [R=301,L]
 {% else %}
+  DocumentRoot {{ moodle_web_documentroot }}
   {% include 'moodle.apache.conf.j2' %}
 {% endif %}
 </VirtualHost>

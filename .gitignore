@@ -6,6 +6,7 @@ hosts
 releases.json
 env/
 venv/
+temp/
 
 # Ignore all files in deploy/inventory/host_vars/ and deploy/inventory/group_vars/ 
 # but allow .template files

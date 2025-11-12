@@ -94,11 +94,12 @@ moodle_db_username: moodler
 # If the database service has to be installed, a random string is generated
 # for the database password. If the database service is already running on a
 # different server, the user must supply the username and password.
+# Passwords are stored in ~/.ansible/passwords with secure permissions
 moodle_db_password: "{{
   lookup('ansible.builtin.password',
-  '/tmp/' + moodle_db_username + '-db_password',
-  length=24,
-  chars=['ascii_letters', 'digits'])
+  lookup('env', 'HOME') + '/.ansible/passwords/' + moodle_db_username + '-db_password',
+  length=32,
+  chars=['ascii_letters', 'digits', '!@#$%^&*'])
   }}"
 
 # ------ Install & Server-side Configuration {{{1

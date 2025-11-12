@@ -21,6 +21,12 @@
 # @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
 ##
 
+- name: Ensure Ansible password directory exists with secure permissions
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.ansible/passwords"
+    state: directory
+    mode: '0700'
+
 - name: Determine versions
   ansible.builtin.import_tasks: ./set_versions.yml
 

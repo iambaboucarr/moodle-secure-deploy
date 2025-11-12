@@ -68,23 +68,31 @@
           block:
             - name: Install TLS certificates
               when: moodle_web_letsencrypt and moodle_env == 'production'
-              ansible.builtin.include_role:
-                name: geerlingguy.certbot
-                apply:
-                  become: true
-              vars:
-                certbot_create_if_missing: true
-                certbot_admin_email: "{{ moodle_admin_email }}"
-                certbot_create_standalone_stop_services:
-                  - apache2
-                certbot_certs:
-                  - domains:
-                      - "{{ moodle_web_domain }}"
+              block:
+                - name: Install Let's Encrypt certificates with certbot
+                  ansible.builtin.include_role:
+                    name: geerlingguy.certbot
+                    apply:
+                      become: true
+                  vars:
+                    certbot_create_if_missing: true
+                    certbot_admin_email: "{{ moodle_admin_email }}"
+                    certbot_create_standalone_stop_services:
+                      - apache2
+                    certbot_certs:
+                      - domains:
+                          - "{{ moodle_web_domain }}"
+
+                - name: Set path to Let's Encrypt TLS certificate files
+                  ansible.builtin.set_fact:
+                    moodle_web_certificatefile: /etc/letsencrypt/live/{{ moodle_web_domain }}/fullchain.pem
+                    moodle_web_certificatekeyfile: /etc/letsencrypt/live/{{ moodle_web_domain }}/privkey.pem
 
             - name: Install TLS certificate in development
               when: moodle_env == 'development'
               block:
                 - name: Install prequisite Python libraries for self-signed certificates
+                  become: true
                   ansible.builtin.pip:
                     name:
                       - cryptography
@@ -106,6 +114,8 @@
                   become: true
                   community.crypto.openssl_privatekey:
                     path: /etc/ssl/private/{{ moodle_web_domain }}.pem
+                    size: 4096
+                    mode: '0600'
 
                 - name: Generate an OpenSSL Certificate Signing Request
                   become: true
@@ -113,6 +123,7 @@
                     path: /etc/ssl/csr/{{ moodle_web_domain }}.csr
                     privatekey_path: /etc/ssl/private/{{ moodle_web_domain }}.pem
                     common_name: "{{ moodle_web_domain }}"
+                    mode: '0600'
 
                 - name: Install self-signed TLS certificates
                   become: true
@@ -121,11 +132,22 @@
                     privatekey_path: /etc/ssl/private/{{ moodle_web_domain }}.pem
                     csr_path: /etc/ssl/csr/{{ moodle_web_domain }}.csr
                     provider: selfsigned
+                    mode: '0644'
 
                 - name: Set path to TLS certificate files
                   ansible.builtin.set_fact:
                     moodle_web_certificatefile: /etc/ssl/crt/{{ moodle_web_domain }}.crt
                     moodle_web_certificatekeyfile: /etc/ssl/private/{{ moodle_web_domain }}.pem
+
+            - name: Verify TLS certificate files exist
+              become: true
+              ansible.builtin.stat:
+                path: "{{ item }}"
+              register: secure_moodle_cert_check
+              loop:
+                - "{{ moodle_web_certificatefile }}"
+                - "{{ moodle_web_certificatekeyfile }}"
+              failed_when: not secure_moodle_cert_check.results | map(attribute='stat.exists') | list is all
 
             - name: Install secure Apache virtualhost configuration for Moodle
               become: true
@@ -133,6 +155,7 @@
                 src: moodle.apache.virtualhost.secure.conf.j2
                 dest: /etc/apache2/sites-available/{{ moodle_web_domain }}-ssl.conf
                 mode: u=rw,g=r,o=r
+                validate: apache2ctl -t -f %s
 
             - name: Enable secure Apache virtualhost configuration for Moodle
               become: true

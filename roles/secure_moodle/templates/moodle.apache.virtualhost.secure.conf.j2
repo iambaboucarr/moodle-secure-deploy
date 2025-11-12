@@ -2,25 +2,55 @@
   ServerName {{ moodle_web_domain }}
   DocumentRoot {{ moodle_web_documentroot }}
 
+  # Enable HTTP/2 if available
+  Protocols h2 http/1.1
+
   {% include 'moodle.apache.conf.j2' %}
 
   <IfModule mod_ssl.c>
     SSLEngine On
     SSLCertificateFile {{ moodle_web_certificatefile }}
     SSLCertificateKeyFile {{ moodle_web_certificatekeyfile }}
-    SSLProtocol all -SSLv3 -TLSv1 -TLSv1.1
-    SSLHonorCipherOrder on
-    # Reasonable modern default; keep in sync with distro guidance
-    SSLCipherSuite HIGH:!aNULL:!MD5:!3DES
+    
+    # Modern TLS configuration - only TLS 1.2 and 1.3
+    SSLProtocol -all +TLSv1.2 +TLSv1.3
+    SSLHonorCipherOrder off
+    
+    # Modern cipher suite prioritizing TLS 1.3 and strong TLS 1.2 ciphers
+    # Compatible with Mozilla Modern compatibility list
+    SSLCipherSuite TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+    
+    # Use modern elliptic curves
+    SSLOpenSSLConfCmd Curves X25519:secp521r1:secp384r1:prime256v1
+    
     # Enable OCSP stapling when available
     SSLUseStapling On
     SSLStaplingCache shmcb:/var/run/ocsp(128000)
+    SSLStaplingResponderTimeout 5
+    SSLStaplingReturnResponderErrors off
+    
+    # Enable session caching
+    SSLSessionCache shmcb:/var/cache/apache2/ssl_scache(512000)
+    SSLSessionCacheTimeout 300
+    
+    # Disable SSL compression (CRIME attack mitigation)
+    SSLCompression off
   </IfModule>
 
   <IfModule mod_headers.c>
+    # HSTS with preload (2 years)
     Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    
+    # Additional security headers for HTTPS
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    
+    # Content Security Policy - adjust as needed for your Moodle installation
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self';"
   </IfModule>
 
-  ErrorLog ${APACHE_LOG_DIR}/{{ moodle_web_domain }}-error.log
-  CustomLog ${APACHE_LOG_DIR}/access.log combined
+  ErrorLog ${APACHE_LOG_DIR}/{{ moodle_web_domain }}-ssl-error.log
+  CustomLog ${APACHE_LOG_DIR}/{{ moodle_web_domain }}-ssl-access.log combined
 </VirtualHost>

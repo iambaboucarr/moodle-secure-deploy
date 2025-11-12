@@ -27,12 +27,14 @@
 
 - name: Restart Apache web service
   become: true
-  ansible.builtin.sysvinit:
+  ansible.builtin.service:
     name: apache2
     state: restarted
+    enabled: true
 
 - name: Restart cron service
   become: true
-  ansible.builtin.sysvinit:
+  ansible.builtin.service:
     name: cron
     state: restarted
+    enabled: true

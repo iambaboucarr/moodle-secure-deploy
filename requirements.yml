@@ -21,6 +21,10 @@
 # @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
 ##
 
-roles: []
+roles:
+  - name: geerlingguy.certbot
+    version: 7.2.0
 
-collections: []
+collections:
+  - name: community.crypto
+    version: ">=2.0.0"
