@@ -11,14 +11,15 @@
       ansible.builtin.stat:
         path: "{{ playbook_dir }}/.ansible_passwords"
       register: password_dir_stat
+      ignore_errors: true
 
-    - name: Remove password directory if owned by root (wrong owner)
+    - name: Force remove password directory and contents to ensure clean state
       delegate_to: localhost
       become: true
-      ansible.builtin.file:
-        path: "{{ playbook_dir }}/.ansible_passwords"
-        state: absent
-      when: password_dir_stat.stat.exists and password_dir_stat.stat.pw_name == 'root'
+      ansible.builtin.command:
+        cmd: rm -rf {{ playbook_dir }}/.ansible_passwords
+      when: password_dir_stat.stat.exists
+      changed_when: true
 
     - name: Create password directory as current user
       delegate_to: localhost
