@@ -8,6 +8,9 @@ env/
 venv/
 temp/
 
+# Ansible generated passwords (sensitive)
+.ansible_passwords/
+
 # Ignore all files in deploy/inventory/host_vars/ and deploy/inventory/group_vars/ 
 # but allow .template files
 deploy/inventory/host_vars/*

@@ -4,5 +4,13 @@
   vars:
     ansible_user: "{{ lookup('env','USER') }}"
     moodle_version: "5.1"
+  pre_tasks:
+    - name: Ensure password directory exists locally
+      delegate_to: localhost
+      become: false
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/.ansible_passwords"
+        state: directory
+        mode: '0700'
   roles:
     - secure_moodle

@@ -21,15 +21,6 @@
 # @copyright  2023 Geoffrey Bernardo van Wyk (https://geoffreyvanwyk.dev)
 ##
 
-- name: Ensure secure directory for Ansible passwords
-  become: true
-  ansible.builtin.file:
-    path: /var/lib/ansible/passwords
-    state: directory
-    mode: '0700'
-    owner: root
-    group: root
-
 - name: Determine versions
   ansible.builtin.import_tasks: ./set_versions.yml
 
