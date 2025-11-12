@@ -23,7 +23,7 @@
 
 roles:
   - name: geerlingguy.certbot
-    version: 7.2.0
+    version: 5.4.1
 
 collections:
   - name: community.crypto
