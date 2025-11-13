@@ -13,15 +13,18 @@
       register: password_dir_stat
       ignore_errors: true
 
-    - name: Force remove password directory and contents to ensure clean state
+    - name: Remove password directory only if it has wrong ownership
       delegate_to: localhost
       become: true
       ansible.builtin.command:
         cmd: rm -rf {{ playbook_dir }}/.ansible_passwords
-      when: password_dir_stat.stat.exists
+      when:
+        - password_dir_stat.stat.exists
+        - password_dir_stat.stat.pw_name is defined
+        - password_dir_stat.stat.pw_name == 'root'
       changed_when: true
 
-    - name: Create password directory as current user
+    - name: Ensure password directory exists as current user
       delegate_to: localhost
       become: false
       ansible.builtin.file:
