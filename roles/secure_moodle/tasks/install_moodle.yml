@@ -55,9 +55,15 @@
     - name: Establish fact of whether Moodle is installed or not
       ansible.builtin.set_fact:
         secure_moodle_is_installed: "{{
-          not secure_moodle_check_database_schema.stdout
-          is
-          search('Database is not yet installed')
+          (secure_moodle_check_database_schema.rc == 0)
+          and
+          not (
+          secure_moodle_check_database_schema.stdout is search('Database is not yet installed')
+          or
+          secure_moodle_check_database_schema.stdout is search('Error reading from database')
+          or
+          secure_moodle_check_database_schema.stdout is search('Error: Database connection failed')
+          )
           }}"
 
 - name: Install Moodle database
